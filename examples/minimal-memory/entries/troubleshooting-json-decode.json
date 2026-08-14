@@ -1,0 +1,68 @@
+{
+  "contract_version": "agiwiki.entry.v1",
+  "entry_id": "entry_66666666666666666666666666666666",
+  "kind": "troubleshooting",
+  "title": "排查 JSONDecodeError",
+  "summary": "先检查编码和错误位置，再在副本中修正 JSON 语法。",
+  "content": {
+    "symptoms": [
+      "json.loads 或 json.load 抛出 JSONDecodeError。"
+    ],
+    "prerequisites": [
+      "保留失败输入的只读副本。",
+      "确认输入本应是 JSON，而不是日志、JSON Lines 或其他格式。"
+    ],
+    "diagnostic_steps": [
+      {
+        "step_id": "diag_read_location",
+        "check": "读取异常中的行号、列号和字符位置。",
+        "expected_signal": "错误对象提供可定位到输入文本的位置信息。",
+        "branches": [
+          {
+            "when": "位置指向文件开头",
+            "guidance": "检查空文件、字节顺序标记和错误编码。"
+          },
+          {
+            "when": "位置指向对象或数组内部",
+            "guidance": "检查缺失逗号、引号、括号或多余尾逗号。"
+          }
+        ],
+        "warnings": [
+          "不要把包含秘密的完整输入复制到公开日志。"
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "fix_id": "fix_correct_copy",
+        "action": "仅在输入副本中修正定位到的语法错误。",
+        "verification": "重新解析副本并确认得到预期的 JSON 类型和字段。",
+        "failure_guidance": [
+          "若修正后错误位置移动但问题仍存在，继续按新的精确位置诊断。"
+        ],
+        "warnings": [
+          "验证成功前不要覆盖原始文件。"
+        ]
+      }
+    ],
+    "escalation": [
+      "如果输入由上游程序生成，保留脱敏的错误位置和生成器版本后交给维护者。"
+    ],
+    "warnings": [
+      "错误输入可能包含个人信息或凭据，应先脱敏。"
+    ]
+  },
+  "keywords": ["JSONDecodeError", "排障", "语法"],
+  "applies_to": ["python:3.12"],
+  "relations": [],
+  "source_refs": [
+    {
+      "source_id": "src_22222222222222222222222222222222",
+      "locator": {
+        "type": "section",
+        "value": "Exceptions / JSONDecodeError"
+      },
+      "support_level": "direct"
+    }
+  ]
+}

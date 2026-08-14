@@ -1,0 +1,34 @@
+{
+  "contract_version": "agiwiki.entry.v1",
+  "entry_id": "entry_33333333333333333333333333333333",
+  "kind": "fact",
+  "title": "ensure_ascii 控制非 ASCII 字符转义",
+  "summary": "json.dumps 的 ensure_ascii 为 false 时，非 ASCII 字符可以直接出现在输出中。",
+  "content": {
+    "statement": "调用 json.dumps 时将 ensure_ascii 设置为 false，可让中文等非 ASCII 字符以原字符形式输出。",
+    "qualifiers": [
+      {
+        "name": "适用版本",
+        "value": "Python 3.12"
+      }
+    ]
+  },
+  "keywords": ["ensure_ascii", "json", "Unicode"],
+  "applies_to": ["python:3.12"],
+  "relations": [
+    {
+      "type": "related_to",
+      "target_entry_id": "entry_44444444444444444444444444444444"
+    }
+  ],
+  "source_refs": [
+    {
+      "source_id": "src_22222222222222222222222222222222",
+      "locator": {
+        "type": "section",
+        "value": "Basic Usage / json.dumps"
+      },
+      "support_level": "direct"
+    }
+  ]
+}

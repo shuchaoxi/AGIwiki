@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "agiwiki": {
+      "command": "agiwiki-mcp"
+    }
+  }
+}

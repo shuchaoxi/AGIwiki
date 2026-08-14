@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/workspace.v1.json",
+  "title": "AGIWiki editable memory workspace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "workspace_id",
+    "slug",
+    "version",
+    "title",
+    "default_locale"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "agiwiki.workspace.v1"
+    },
+    "workspace_id": {
+      "type": "string",
+      "pattern": "^ws_[a-f0-9]{32}$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "default_locale": {
+      "$ref": "#/$defs/locale"
+    }
+  },
+  "$defs": {
+    "locale": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+    }
+  }
+}

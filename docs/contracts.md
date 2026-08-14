@@ -1,0 +1,44 @@
+# Data contracts
+
+All portable documents are closed JSON objects. Unknown fields, duplicate
+keys, non-finite numbers, unsafe URIs, common private machine paths, and
+unresolved cross-references are rejected. Operational paths such as `/etc/hosts`
+may still be factual content; authors must distinguish them from source-file
+locations and secrets.
+
+## Workspace
+
+`agiwiki.json` identifies one editable knowledge collection and its release
+version. Filenames do not determine identity.
+
+## Source
+
+A Source records a stable `source_id`, media kind, title, edition, content
+digest, optional portable canonical URI, and language. Original document bytes
+are not copied into a Pack in version 0.1.
+
+## Entry
+
+An Entry has a stable `entry_id` and one of four kinds:
+
+- `fact`: a statement plus qualifiers;
+- `concept`: definition, details, examples, and misconceptions;
+- `procedure`: goal, prerequisites, ordered steps, warnings, verification, and
+  failure guidance;
+- `troubleshooting`: symptoms, diagnostics, fixes, escalation, warnings, and
+  verification.
+
+Every Entry cites at least one Source through a portable locator. The derived
+`entry_version_id` changes when the canonical Entry changes; the stable
+`entry_id` does not.
+
+## Memory Pack
+
+The Pack manifest binds the exact Workspace, Source set, Entry revisions,
+output files, and their digests. `pack_id` derives from canonical portable
+semantics. Timestamps, file locations, SQLite bytes, and local activation state
+never enter its identity.
+
+The schemas live in [`src/agiwiki/schemas`](../src/agiwiki/schemas). The
+[`examples/minimal-memory`](../examples/minimal-memory) Workspace contains one
+Source and one Entry of each kind.

@@ -1,0 +1,9 @@
+{
+  "contract_version": "agiwiki.workspace.v1",
+  "workspace_id": "ws_11111111111111111111111111111111",
+  "slug": "python-json-notes",
+  "version": "0.1.0",
+  "title": "Python JSON 个人事实记忆",
+  "description": "一个展示事实、概念、教程和排障词条的最小本地 Workspace。",
+  "default_locale": "zh-CN"
+}

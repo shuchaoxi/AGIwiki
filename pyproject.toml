@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agiwiki"
+version = "0.1.0"
+description = "Local-first personal factual memory for AI agents"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "shuchaoxi"}]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "jsonschema>=4.20,<5",
+  "referencing>=0.35,<1",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp[cli]>=1.27,<2"]
+dev = [
+  "build>=1.2,<2",
+  "pytest>=8,<10",
+  "ruff>=0.15,<1",
+]
+
+[project.scripts]
+agiwiki = "agiwiki.cli:main"
+agiwiki-mcp = "agiwiki.mcp:main"
+
+[project.urls]
+Homepage = "https://agiwiki.net"
+Repository = "https://github.com/shuchaoxi/AGIWiki"
+Issues = "https://github.com/shuchaoxi/AGIWiki/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+agiwiki = ["schemas/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88

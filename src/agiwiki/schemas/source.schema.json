@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/source.v1.json",
+  "title": "AGIWiki source metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "source_id",
+    "kind",
+    "title",
+    "edition",
+    "content_digest",
+    "canonical_uri",
+    "language"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "agiwiki.source.v1"
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^src_[a-f0-9]{32}$"
+    },
+    "kind": {
+      "enum": ["pdf", "web", "manual", "code", "note", "other"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "edition": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "content_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "canonical_uri": {
+      "type": ["string", "null"],
+      "format": "uri",
+      "maxLength": 2000
+    },
+    "language": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+    }
+  }
+}

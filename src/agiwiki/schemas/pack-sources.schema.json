@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/pack-sources.v1.json",
+  "title": "AGIWiki immutable Pack Source envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "sources", "sources_digest"],
+  "properties": {
+    "contract_version": {"const": "agiwiki.pack-sources.v1"},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://agiwiki.net/schemas/source.v1.json"
+      }
+    },
+    "sources_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

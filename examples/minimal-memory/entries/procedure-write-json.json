@@ -1,0 +1,68 @@
+{
+  "contract_version": "agiwiki.entry.v1",
+  "entry_id": "entry_55555555555555555555555555555555",
+  "kind": "procedure",
+  "title": "生成可读的 UTF-8 JSON",
+  "summary": "使用明确编码和 ensure_ascii=false 写出包含中文的 JSON 文件。",
+  "content": {
+    "goal": "把一个 Python 对象写成可读且保留中文字符的 UTF-8 JSON。",
+    "prerequisites": [
+      "确认目标是用户授权修改的文件。",
+      "保留原文件副本或使用不会覆盖现有文件的写入方式。"
+    ],
+    "steps": [
+      {
+        "step_id": "step_serialize",
+        "action": "使用 json.dumps(value, ensure_ascii=False, indent=2) 生成文本。",
+        "expected_result": "结果是带缩进并保留中文字符的 JSON 文本。",
+        "verification": "用 json.loads 重新解析生成的文本，并比较解析结果。",
+        "failure_guidance": [
+          "若对象包含不可序列化值，先把该值转换为明确的 JSON 类型。"
+        ],
+        "warnings": [
+          "不要在输出中保存密码、访问令牌或私钥。"
+        ]
+      },
+      {
+        "step_id": "step_write",
+        "action": "以 UTF-8 编码把已验证文本写入新文件。",
+        "expected_result": "新文件存在且能以 UTF-8 解码。",
+        "verification": "重新读取文件并用 json.loads 解析。",
+        "failure_guidance": [
+          "写入失败时保留原文件，不要用不完整输出覆盖它。"
+        ],
+        "warnings": [
+          "写入前确认目标路径没有指向符号链接。"
+        ]
+      }
+    ],
+    "verification": [
+      "重新解析后的对象与输入对象语义相同。",
+      "输出文件可以严格按 UTF-8 解码。"
+    ],
+    "failure_guidance": [
+      "任何验证失败都应停止替换原文件。"
+    ],
+    "warnings": [
+      "该流程只描述数据编码，不授权覆盖用户文件。"
+    ]
+  },
+  "keywords": ["json.dumps", "UTF-8", "教程"],
+  "applies_to": ["python:3.12"],
+  "relations": [
+    {
+      "type": "prerequisite_for",
+      "target_entry_id": "entry_66666666666666666666666666666666"
+    }
+  ],
+  "source_refs": [
+    {
+      "source_id": "src_22222222222222222222222222222222",
+      "locator": {
+        "type": "section",
+        "value": "Basic Usage / json.dump"
+      },
+      "support_level": "direct"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AGIWiki Memory"
+  short_description: "Use local factual memory packs with agents"
+  default_prompt: "Use $agiwiki-memory to find and read the relevant local factual memory before solving this task."

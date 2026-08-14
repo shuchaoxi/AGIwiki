@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/entry.v1.json",
+  "title": "AGIWiki editable factual-memory entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "entry_id",
+    "kind",
+    "title",
+    "summary",
+    "content",
+    "keywords",
+    "applies_to",
+    "relations",
+    "source_refs"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "agiwiki.entry.v1"
+    },
+    "entry_id": {
+      "type": "string",
+      "pattern": "^entry_[a-f0-9]{32}$"
+    },
+    "kind": {
+      "enum": ["fact", "concept", "procedure", "troubleshooting"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "content": {
+      "type": "object"
+    },
+    "keywords": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "applies_to": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "relations": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/relation"
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/sourceRef"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"kind": {"const": "fact"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "content": {"$ref": "#/$defs/factContent"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"kind": {"const": "concept"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "content": {"$ref": "#/$defs/conceptContent"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"kind": {"const": "procedure"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "content": {"$ref": "#/$defs/procedureContent"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"kind": {"const": "troubleshooting"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "content": {"$ref": "#/$defs/troubleshootingContent"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 12000
+    },
+    "textList": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_entry_id"],
+      "properties": {
+        "type": {
+          "enum": [
+            "parent_of",
+            "child_of",
+            "related_to",
+            "prerequisite_for",
+            "supersedes",
+            "contradicts"
+          ]
+        },
+        "target_entry_id": {
+          "type": "string",
+          "pattern": "^entry_[a-f0-9]{32}$"
+        }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "locator", "support_level"],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "pattern": "^src_[a-f0-9]{32}$"
+        },
+        "locator": {
+          "$ref": "#/$defs/locator"
+        },
+        "support_level": {
+          "enum": ["direct", "indirect"]
+        }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "enum": [
+            "page",
+            "section",
+            "url_fragment",
+            "line_range",
+            "json_pointer",
+            "media_time",
+            "note"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    },
+    "factContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "qualifiers"],
+      "properties": {
+        "statement": {"$ref": "#/$defs/text"},
+        "qualifiers": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "value"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            }
+          }
+        }
+      }
+    },
+    "conceptContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition", "details", "examples", "misconceptions"],
+      "properties": {
+        "definition": {"$ref": "#/$defs/text"},
+        "details": {"$ref": "#/$defs/textList"},
+        "examples": {"$ref": "#/$defs/textList"},
+        "misconceptions": {"$ref": "#/$defs/textList"}
+      }
+    },
+    "procedureStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "action",
+        "expected_result",
+        "verification",
+        "failure_guidance",
+        "warnings"
+      ],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "pattern": "^step_[a-z0-9][a-z0-9_-]{0,63}$"
+        },
+        "action": {"$ref": "#/$defs/text"},
+        "expected_result": {"$ref": "#/$defs/text"},
+        "verification": {"$ref": "#/$defs/text"},
+        "failure_guidance": {"$ref": "#/$defs/textList"},
+        "warnings": {"$ref": "#/$defs/textList"}
+      }
+    },
+    "procedureContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal",
+        "prerequisites",
+        "steps",
+        "verification",
+        "failure_guidance",
+        "warnings"
+      ],
+      "properties": {
+        "goal": {"$ref": "#/$defs/text"},
+        "prerequisites": {"$ref": "#/$defs/textList"},
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/procedureStep"}
+        },
+        "verification": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "failure_guidance": {"$ref": "#/$defs/textList"},
+        "warnings": {"$ref": "#/$defs/textList"}
+      }
+    },
+    "diagnosticBranch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "guidance"],
+      "properties": {
+        "when": {"$ref": "#/$defs/text"},
+        "guidance": {"$ref": "#/$defs/text"}
+      }
+    },
+    "diagnosticStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "check", "expected_signal", "branches", "warnings"],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "pattern": "^diag_[a-z0-9][a-z0-9_-]{0,63}$"
+        },
+        "check": {"$ref": "#/$defs/text"},
+        "expected_signal": {"$ref": "#/$defs/text"},
+        "branches": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {"$ref": "#/$defs/diagnosticBranch"}
+        },
+        "warnings": {"$ref": "#/$defs/textList"}
+      }
+    },
+    "fix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fix_id",
+        "action",
+        "verification",
+        "failure_guidance",
+        "warnings"
+      ],
+      "properties": {
+        "fix_id": {
+          "type": "string",
+          "pattern": "^fix_[a-z0-9][a-z0-9_-]{0,63}$"
+        },
+        "action": {"$ref": "#/$defs/text"},
+        "verification": {"$ref": "#/$defs/text"},
+        "failure_guidance": {"$ref": "#/$defs/textList"},
+        "warnings": {"$ref": "#/$defs/textList"}
+      }
+    },
+    "troubleshootingContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symptoms",
+        "prerequisites",
+        "diagnostic_steps",
+        "fixes",
+        "escalation",
+        "warnings"
+      ],
+      "properties": {
+        "symptoms": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "prerequisites": {"$ref": "#/$defs/textList"},
+        "diagnostic_steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/diagnosticStep"}
+        },
+        "fixes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/fix"}
+        },
+        "escalation": {"$ref": "#/$defs/textList"},
+        "warnings": {"$ref": "#/$defs/textList"}
+      }
+    }
+  }
+}

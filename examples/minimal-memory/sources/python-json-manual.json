@@ -1,0 +1,10 @@
+{
+  "contract_version": "agiwiki.source.v1",
+  "source_id": "src_22222222222222222222222222222222",
+  "kind": "manual",
+  "title": "Python json 模块文档",
+  "edition": "Python 3.12",
+  "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "canonical_uri": "https://docs.python.org/3.12/library/json.html",
+  "language": "zh-CN"
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/pack-entry.v1.json",
+  "title": "AGIWiki immutable Pack Entry envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "entry_id",
+    "entry_version_id",
+    "entry_digest",
+    "entry"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.pack-entry.v1"},
+    "entry_id": {
+      "type": "string",
+      "pattern": "^entry_[a-f0-9]{32}$"
+    },
+    "entry_version_id": {
+      "type": "string",
+      "pattern": "^entryv_[a-f0-9]{32}$"
+    },
+    "entry_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "entry": {
+      "$ref": "https://agiwiki.net/schemas/entry.v1.json"
+    }
+  }
+}
