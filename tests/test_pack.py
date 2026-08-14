@@ -5,13 +5,27 @@ from pathlib import Path
 
 import pytest
 
-from agiwiki.codec import JSONDocumentError, canonical_json, load_json_document, sha256_digest
-from agiwiki.pack import PackError, build_pack, get_entry, verify_pack
-
+from agiwiki.codec import (
+    JSONDocumentError,
+    canonical_json,
+    file_sha256,
+    load_json_document,
+    sha256_digest,
+    stable_id,
+)
+from agiwiki.pack import (
+    PackError,
+    build_pack,
+    build_workspace_pack,
+    get_entry,
+    verify_pack,
+)
+from agiwiki.workspace import validate_workspace, workspace_digest
 
 WORKSPACE_ID = "ws_" + "1" * 32
 SOURCE_ID = "src_" + "2" * 32
 ENTRY_ID = "entry_" + "3" * 32
+EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 
 
 def workspace(*, version: str = "1.0.0") -> dict:
@@ -163,6 +177,19 @@ def test_pack_is_portable_deterministic_json_closed_set(tmp_path: Path) -> None:
     assert envelope["entry_digest"] == sha256_digest(envelope["entry"])
 
 
+def test_example_pack_v2_has_a_golden_portable_identity(tmp_path: Path) -> None:
+    workspace_value = validate_workspace(EXAMPLE)
+    receipt = build_workspace_pack(workspace_value, tmp_path / "example.memory-pack")
+
+    assert workspace_value.workspace_digest == (
+        "sha256:b50f1df15e1d5a322fb76ce09906cfe527fa1c27c41a6037f244a39f1a0da5e6"
+    )
+    assert receipt["pack_id"] == "pack_d773debce47e8ec089cf146aca1ef0b1"
+    assert receipt["manifest_digest"] == (
+        "sha256:ed790c4b16fd4b860677895c7330add1643a3e84712b099f07c20d9d4796579a"
+    )
+
+
 def test_pack_exact_replay_and_no_clobber_conflict(tmp_path: Path) -> None:
     target = tmp_path / "pack"
     original = build_pack(workspace(), [source()], [entry()], target)
@@ -186,7 +213,9 @@ def test_verify_rejects_tamper_extra_files_and_symlinks(
     if attack == "tamper":
         document = json.loads(entry_path.read_text(encoding="utf-8"))
         document["entry"]["title"] = "被修改"
-        entry_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+        entry_path.write_text(
+            json.dumps(document, ensure_ascii=False), encoding="utf-8"
+        )
     elif attack == "extra":
         (target / "extra.json").write_text("{}", encoding="utf-8")
     else:
@@ -207,11 +236,130 @@ def test_invalid_build_leaves_no_pack_and_missing_source_is_rejected(
     assert not list(tmp_path.glob(".pack.*"))
 
 
+@pytest.mark.parametrize("target", ["missing", "self"])
+def test_pack_build_rejects_unresolved_or_self_relations(
+    tmp_path: Path, target: str
+) -> None:
+    broken = entry()
+    broken["relations"] = [
+        {
+            "type": "related_to",
+            "target_entry_id": (ENTRY_ID if target == "self" else "entry_" + "9" * 32),
+        }
+    ]
+
+    with pytest.raises(PackError, match="relation"):
+        build_pack(workspace(), [source()], [broken], tmp_path / "broken-pack")
+
+
+def test_pack_verify_rejects_digest_consistent_missing_relation(tmp_path: Path) -> None:
+    target = tmp_path / "pack"
+    other_entry_id = "entry_" + "6" * 32
+    first = entry()
+    second = entry(title="检查新版设置", entry_id=other_entry_id)
+    first["relations"] = [{"type": "related_to", "target_entry_id": other_entry_id}]
+    build_pack(workspace(), [source()], [first, second], target)
+
+    manifest_path = target / "pack.json"
+    manifest = load_json_document(manifest_path)
+    first_ref = next(
+        item for item in manifest["entry_refs"] if item["entry_id"] == ENTRY_ID
+    )
+    old_path = target / first_ref["path"]
+    envelope = load_json_document(old_path)
+    envelope["entry"]["relations"][0]["target_entry_id"] = "entry_" + "9" * 32
+    envelope["entry_digest"] = sha256_digest(envelope["entry"])
+    envelope["entry_version_id"] = stable_id(
+        "entryv",
+        {"entry_id": ENTRY_ID, "entry_digest": envelope["entry_digest"]},
+    )
+    new_relative = f"entries/{envelope['entry_version_id']}.json"
+    new_path = target / new_relative
+    new_path.write_text(canonical_json(envelope) + "\n", encoding="utf-8")
+    old_path.unlink()
+
+    first_ref.update(
+        {
+            "entry_version_id": envelope["entry_version_id"],
+            "entry_digest": envelope["entry_digest"],
+            "path": new_relative,
+        }
+    )
+    manifest["entry_refs"].sort(key=lambda item: item["entry_id"])
+    manifest["entries_digest"] = sha256_digest(manifest["entry_refs"])
+    sources = load_json_document(target / "sources.json")["sources"]
+    entry_documents = [
+        load_json_document(target / item["path"])["entry"]
+        for item in manifest["entry_refs"]
+    ]
+    manifest["workspace_digest"] = workspace_digest(
+        manifest["workspace"], sources, entry_documents
+    )
+    manifest["pack_id"] = stable_id(
+        "pack",
+        {
+            "contract_version": manifest["contract_version"],
+            "format": manifest["format"],
+            "quality_policy": manifest["quality_policy"],
+            "workspace_id": manifest["workspace_id"],
+            "workspace_digest": manifest["workspace_digest"],
+            "sources_digest": manifest["sources_digest"],
+            "entries_digest": manifest["entries_digest"],
+        },
+    )
+    manifest["outputs"].pop(first_ref["path"], None)
+    manifest["outputs"] = {
+        "sources.json": file_sha256(target / "sources.json"),
+        **{
+            item["path"]: file_sha256(target / item["path"])
+            for item in manifest["entry_refs"]
+        },
+    }
+    manifest["outputs"] = dict(sorted(manifest["outputs"].items()))
+    manifest["manifest_digest"] = sha256_digest(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    manifest_path.write_text(canonical_json(manifest) + "\n", encoding="utf-8")
+
+    with pytest.raises(PackError, match="relation target"):
+        verify_pack(target)
+
+
+def test_pack_verify_rejects_noncanonical_json_bytes(tmp_path: Path) -> None:
+    target = tmp_path / "pack"
+    build_pack(workspace(), [source()], [entry()], target)
+    manifest_path = target / "pack.json"
+    manifest = load_json_document(manifest_path)
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(PackError, match="canonical JSON bytes"):
+        verify_pack(target)
+
+
+@pytest.mark.parametrize("field", ["keywords", "locator"])
+def test_pack_build_rejects_blank_retrieval_or_locator_text(
+    tmp_path: Path, field: str
+) -> None:
+    broken = entry()
+    if field == "keywords":
+        broken["keywords"] = [" ", "  "]
+    else:
+        broken["source_refs"][0]["locator"]["value"] = " "
+
+    with pytest.raises(PackError, match="blank text|retrieval keywords"):
+        build_pack(workspace(), [source()], [broken], tmp_path / f"broken-{field}")
+
+
 def test_manifest_duplicate_key_fails_closed(tmp_path: Path) -> None:
     target = tmp_path / "pack"
     build_pack(workspace(), [source()], [entry()], target)
     manifest_path = target / "pack.json"
     text = manifest_path.read_text(encoding="utf-8").rstrip()
-    manifest_path.write_text(text[:-1] + ',"pack_id":"pack_' + "0" * 32 + '"}', encoding="utf-8")
+    manifest_path.write_text(
+        text[:-1] + ',"pack_id":"pack_' + "0" * 32 + '"}', encoding="utf-8"
+    )
     with pytest.raises(PackError, match="manifest"):
         verify_pack(target)

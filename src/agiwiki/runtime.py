@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
 import os
 import re
-from typing import Any, Sequence
+from collections.abc import Sequence
+from copy import deepcopy
+from typing import Any
 
 from .codec import canonical_json, load_json_document, sha256_digest
 from .home import HomeService
-from .pack import PackError, get_entry, find_memory as find_pack_memory
+from .pack import PackError, get_entry
+from .pack import find_memory as find_pack_memory
 from .paths import safe_child
 
 
@@ -73,7 +75,9 @@ class MemoryRuntime:
         )
         candidates: list[dict[str, Any]] = []
         for row in releases:
-            index_path = safe_child(self.home.paths.indexes_root, f"{row['pack_id']}.sqlite3")
+            index_path = safe_child(
+                self.home.paths.indexes_root, f"{row['pack_id']}.sqlite3"
+            )
             try:
                 result = find_pack_memory(
                     row["pack_path"],
@@ -108,9 +112,11 @@ class MemoryRuntime:
         )
         selected: list[dict[str, Any]] = []
         remaining = token_budget
+        omitted_for_budget = 0
         for item in candidates:
-            estimate = max(1, (len(canonical_json(item)) + 3) // 4)
+            estimate = _estimated_tokens(item)
             if estimate > remaining:
+                omitted_for_budget += 1
                 continue
             selected.append(item)
             remaining -= estimate
@@ -118,12 +124,15 @@ class MemoryRuntime:
                 break
         return {
             "contract_version": "agiwiki.memory-find.v1",
-            "found": bool(selected),
+            "found": bool(candidates),
+            "returned": bool(selected),
             "query_digest": sha256_digest(query.strip()),
             "count": len(selected),
+            "candidate_count": len(candidates),
             "results": selected,
             "token_budget": token_budget,
             "estimated_tokens": token_budget - remaining,
+            "truncated_by_budget": omitted_for_budget > 0,
         }
 
     def get_memory(
@@ -227,6 +236,13 @@ def _scope(values: Sequence[str] | None) -> set[str] | None:
     ):
         raise RuntimeError("workspace_ids must contain unique non-empty strings")
     return result
+
+
+def _estimated_tokens(value: Any) -> int:
+    text = canonical_json(value)
+    non_ascii = sum(1 for character in text if ord(character) > 127)
+    ascii_count = len(text) - non_ascii
+    return max(1, non_ascii + (ascii_count + 3) // 4)
 
 
 __all__ = ["MemoryRuntime", "RuntimeError"]

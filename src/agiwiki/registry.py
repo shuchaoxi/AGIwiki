@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 import json
 import os
-from pathlib import Path
 import secrets
 import sqlite3
-from typing import Any, Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any
 
 from .codec import canonical_json
 from .paths import HomePaths, initialize_home_paths, require_private_regular_file
-
 
 SCHEMA_VERSION = 1
 
@@ -78,7 +78,9 @@ class HomeRegistry:
                 )
                 row = (SCHEMA_VERSION, identifier)
             elif home_id is not None and row[1] != home_id:
-                raise RegistryError("existing Home identity conflicts with requested identity")
+                raise RegistryError(
+                    "existing Home identity conflicts with requested identity"
+                )
             if row[0] != SCHEMA_VERSION:
                 raise RegistryError("registry schema version is unsupported")
             return {"schema_version": row[0], "home_id": row[1]}
@@ -102,7 +104,9 @@ class HomeRegistry:
             if existing is not None:
                 value = dict(existing)
                 if value != normalized:
-                    raise RegistryError("installed Pack identity conflicts with registry")
+                    raise RegistryError(
+                        "installed Pack identity conflicts with registry"
+                    )
                 return value
             connection.execute(
                 """
@@ -142,7 +146,9 @@ class HomeRegistry:
             if changed != 1:
                 raise RegistryError("release is not registered")
             if health == "BROKEN":
-                connection.execute("DELETE FROM activations WHERE pack_id=?", (pack_id,))
+                connection.execute(
+                    "DELETE FROM activations WHERE pack_id=?", (pack_id,)
+                )
 
     def activate_exact(
         self,
@@ -309,7 +315,14 @@ class HomeRegistry:
 
 
 def _release(value: Mapping[str, Any]) -> dict[str, str]:
-    keys = {"pack_id", "workspace_id", "version", "manifest_digest", "relative_path", "health"}
+    keys = {
+        "pack_id",
+        "workspace_id",
+        "version",
+        "manifest_digest",
+        "relative_path",
+        "health",
+    }
     if set(value) != keys:
         raise RegistryError("release fields are not closed")
     result = {key: str(value[key]) for key in keys}
@@ -332,4 +345,4 @@ def _scope(scope_type: str, scope_key: str) -> tuple[str, str]:
     return normalized, scope_key
 
 
-__all__ = ["HomeRegistry", "RegistryError", "SCHEMA_VERSION"]
+__all__ = ["SCHEMA_VERSION", "HomeRegistry", "RegistryError"]

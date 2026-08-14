@@ -1,10 +1,10 @@
 {
   "contract_version": "agiwiki.source.v1",
   "source_id": "src_22222222222222222222222222222222",
-  "kind": "manual",
-  "title": "Python json 模块文档",
-  "edition": "Python 3.12",
-  "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "canonical_uri": "https://docs.python.org/3.12/library/json.html",
+  "kind": "note",
+  "title": "AGIWiki JSON 示例证据笔记",
+  "edition": "example-v1",
+  "content_digest": "sha256:ff8981309b59ed520665df39a244dce4cfff25834c45c6be94a819849c70579e",
+  "canonical_uri": "https://github.com/shuchaoxi/AGIwiki/blob/main/examples/minimal-memory/source-material/json-evidence-notes.md",
   "language": "zh-CN"
 }

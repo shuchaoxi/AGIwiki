@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 from jsonschema import Draft202012Validator
 
+from agiwiki.codec import JSONDocumentError, file_sha256
 from agiwiki.contracts import (
     ContractError,
     canonical_json,
@@ -17,8 +18,6 @@ from agiwiki.contracts import (
     schema_validators,
     sha256_digest,
 )
-from agiwiki.codec import JSONDocumentError
-
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 
@@ -100,6 +99,11 @@ def test_closed_contract_rejects_unknown_field_with_json_pointer() -> None:
         "file:///home/user/private/manual.pdf",
         "https://user:password@example.test/manual",
         "https://example.test/manual?access_token=secret",
+        "https://example.test/manual?X-Amz-Signature=secret&X-Amz-Credential=id",
+        "https://example.test/manual?key=secret",
+        "https://example.test/manual#access_token=secret",
+        "https://example.test/manual?file=%2Fhome%2Falice%2Fprivate.pdf",
+        "https://example.test/a%00b",
         "https%3A%2F%2Fuser%3Apassword%40example.test%2Fmanual",
     ],
 )
@@ -116,6 +120,18 @@ def test_source_accepts_path_free_public_and_opaque_identifiers() -> None:
     for uri in ("https://example.test/manual#section", "urn:isbn:9780000000000"):
         candidate = {**source, "canonical_uri": uri}
         assert normalize_source(candidate)["canonical_uri"] == uri
+
+
+def test_source_accepts_non_secret_query_and_fragment_parameters() -> None:
+    source = _read("sources/python-json-manual.json")
+    uri = "https://example.test/manual?version=3.12&lang=zh#json.dumps"
+    assert normalize_source({**source, "canonical_uri": uri})["canonical_uri"] == uri
+
+
+def test_example_source_digest_matches_the_bundled_evidence_note() -> None:
+    source = _read("sources/python-json-manual.json")
+    note = EXAMPLE / "source-material" / "json-evidence-notes.md"
+    assert source["content_digest"] == file_sha256(note)
 
 
 @pytest.mark.parametrize(
@@ -169,9 +185,7 @@ def test_troubleshooting_requires_branches_fix_verification_and_escalation() -> 
 
 def test_structured_step_identifiers_must_be_unique() -> None:
     entry = _read("entries/procedure-write-json.json")
-    entry["content"]["steps"][1]["step_id"] = entry["content"]["steps"][0][
-        "step_id"
-    ]
+    entry["content"]["steps"][1]["step_id"] = entry["content"]["steps"][0]["step_id"]
 
     with pytest.raises(ContractError, match="duplicate step_id"):
         normalize_entry(entry)

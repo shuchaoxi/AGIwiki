@@ -52,9 +52,9 @@ Every Entry contains:
   "entry_id": "entry_<32 lowercase hex>",
   "kind": "fact|concept|procedure|troubleshooting",
   "title": "Short searchable title",
-  "summary": "Self-contained retrieval summary",
+  "summary": "A self-contained retrieval summary that states the subject, condition, and conclusion.",
   "content": {},
-  "keywords": [],
+  "keywords": ["specific term", "alternate term"],
   "applies_to": [],
   "relations": [],
   "source_refs": [
@@ -76,15 +76,18 @@ Allowed locator types are `page`, `section`, `url_fragment`, `line_range`,
 ### Fact
 
 ```json
-{"statement": "One bounded assertion.", "qualifiers": [{"name": "version", "value": "1.2"}]}
+{
+  "statement": "In product version 1.2, the named setting defaults to the documented value.",
+  "qualifiers": [{"name": "version", "value": "1.2"}]
+}
 ```
 
 ### Concept
 
 ```json
 {
-  "definition": "Reusable definition.",
-  "details": [],
+  "definition": "A reusable definition that distinguishes this concept from nearby terms.",
+  "details": ["State one source-supported property that matters during later use."],
   "examples": [],
   "misconceptions": []
 }
@@ -94,17 +97,17 @@ Allowed locator types are `page`, `section`, `url_fragment`, `line_range`,
 
 ```json
 {
-  "goal": "Observable goal.",
+  "goal": "Produce an observable result without modifying unrelated user data.",
   "prerequisites": [],
   "steps": [{
     "step_id": "step_first",
-    "action": "One action.",
-    "expected_result": "Observable result.",
-    "verification": "How to check it.",
+    "action": "Perform one bounded action using the exact documented option.",
+    "expected_result": "The named output appears and the previous input remains available.",
+    "verification": "Read the output again and compare the documented fields.",
     "failure_guidance": [],
     "warnings": []
   }],
-  "verification": ["End-to-end success check."],
+  "verification": ["Repeat the documented read-only check and confirm the expected state."],
   "failure_guidance": [],
   "warnings": []
 }
@@ -114,19 +117,22 @@ Allowed locator types are `page`, `section`, `url_fragment`, `line_range`,
 
 ```json
 {
-  "symptoms": ["Observable symptom."],
+  "symptoms": ["The documented command fails with the named observable error."],
   "prerequisites": [],
   "diagnostic_steps": [{
     "step_id": "diag_first",
-    "check": "Read-only diagnostic.",
-    "expected_signal": "Expected evidence.",
-    "branches": [{"when": "Signal condition", "guidance": "Next action"}],
+    "check": "Run the documented read-only diagnostic and record only the necessary fields.",
+    "expected_signal": "The result distinguishes the documented failure states.",
+    "branches": [{
+      "when": "The documented failure signal is present",
+      "guidance": "Apply only the matching bounded fix and then verify again."
+    }],
     "warnings": []
   }],
   "fixes": [{
     "fix_id": "fix_first",
-    "action": "Bounded fix.",
-    "verification": "How to prove the fix worked.",
+    "action": "Apply the smallest source-supported change to a disposable copy.",
+    "verification": "Repeat the original failing operation and check the expected result.",
     "failure_guidance": [],
     "warnings": []
   }],
@@ -141,3 +147,8 @@ Keep an Entry only when it is likely to be reused, supplies a precise citation, 
 concept, captures a version-sensitive operation, or prevents an expensive failure. Leave
 ordinary prose in the original source/RAG layer. Prefer several independently supportable
 Entries over one broad summary that mixes facts and inference.
+
+Before intentionally releasing a changed collection, update the Workspace `version` to a
+meaningful new value. Keep existing `source_id` and `entry_id` values stable for the same
+logical Source and Entry; changed canonical content automatically receives new immutable
+digests, `entry_version_id`, and `pack_id` values.

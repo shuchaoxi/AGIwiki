@@ -31,12 +31,17 @@ files. AGIWiki itself does not call a model.
 
 ## Memory Pack
 
-A Pack contains only canonical, portable JSON. It excludes timestamps,
+A version-2 Pack contains only canonical, portable JSON bytes and records the exact
+`agiwiki.entry-quality.v1` build policy. It excludes timestamps,
 AGIWiki-generated absolute paths, databases, embeddings, caches, prompts, and
 machine-specific state. Credential-bearing URIs and common local paths are
 mechanically rejected, but authors remain responsible for not writing secrets
 into free text. Pack identity changes whenever semantic Source or Entry content
 changes.
+
+The JSON Schema permits a large bounded file set as a denial-of-service safety ceiling, not a
+latency promise. Version 0.1 fully authenticates Pack and index content on reads and is aimed at
+small to medium personal collections; large-corpus performance work remains future work.
 
 ## Personal Home
 
@@ -46,9 +51,11 @@ detected before activation or reading.
 
 ## Agent surface
 
-The MCP server is local stdio and read-only. `find_memory` returns ranked
+The MCP server is local stdio and content-read-only. `find_memory` returns ranked
 candidate memories. `get_memory` returns one exact Entry. Building, installing,
 activating, and repairing are operator actions available only through the CLI.
+Reads may create disposable indexes or quarantine an installed Pack that fails integrity;
+they never edit Workspace or Pack JSON.
 
 ## Non-goals
 

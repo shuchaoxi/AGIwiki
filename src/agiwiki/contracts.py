@@ -8,14 +8,15 @@ credentials across the Workspace-to-Pack boundary.
 
 from __future__ import annotations
 
-from copy import deepcopy
-from functools import lru_cache
 import json
 import os
-from pathlib import Path
 import re
+from collections.abc import Mapping
+from copy import deepcopy
+from functools import lru_cache
+from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import parse_qsl, unquote, urlsplit
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -27,7 +28,6 @@ from .codec import (
     load_json_document,
     sha256_digest,
 )
-
 
 WORKSPACE_CONTRACT = "agiwiki.workspace.v1"
 SOURCE_CONTRACT = "agiwiki.source.v1"
@@ -49,14 +49,25 @@ _SECRET_QUERY_KEYS = frozenset(
         "api_key",
         "apikey",
         "authorization",
+        "auth",
+        "auth_token",
         "bearer",
+        "client_secret",
         "credential",
+        "key",
         "password",
         "private_key",
         "secret",
+        "security_token",
+        "session_token",
         "sig",
         "signature",
         "token",
+        "x_amz_credential",
+        "x_amz_security_token",
+        "x_amz_signature",
+        "x_goog_credential",
+        "x_goog_signature",
     }
 )
 _PRIVATE_POSIX_PATH = re.compile(
@@ -92,14 +103,16 @@ def schema_validators() -> Mapping[str, Draft202012Validator]:
         documents[short_name] = document
         registry = registry.with_resource(str(document["$id"]), resource)
     checker = FormatChecker()
-    return MappingProxyType({
-        short_name: Draft202012Validator(
-            document,
-            registry=registry,
-            format_checker=checker,
-        )
-        for short_name, document in documents.items()
-    })
+    return MappingProxyType(
+        {
+            short_name: Draft202012Validator(
+                document,
+                registry=registry,
+                format_checker=checker,
+            )
+            for short_name, document in documents.items()
+        }
+    )
 
 
 def get_schema_validator(name: str) -> Draft202012Validator:
@@ -132,8 +145,7 @@ def validate_document(
         error = errors[0]
         pointer = _json_pointer(error.absolute_path)
         raise ContractError(
-            f"{_error_prefix(source_path)}{name} invalid at {pointer}: "
-            f"{error.message}"
+            f"{_error_prefix(source_path)}{name} invalid at {pointer}: {error.message}"
         )
 
 
@@ -219,6 +231,8 @@ def _validate_canonical_uri(
     if any(ord(character) < 32 for character in value) or value != value.strip():
         raise ContractError(_error_prefix(source_path) + "canonical_uri is unsafe")
     decoded = unquote(value)
+    if any(ord(character) < 32 for character in decoded):
+        raise ContractError(_error_prefix(source_path) + "canonical_uri is unsafe")
     parsed = urlsplit(decoded)
     if parsed.scheme.lower() not in {"http", "https", "urn", "doi"}:
         raise ContractError(
@@ -231,13 +245,33 @@ def _validate_canonical_uri(
         raise ContractError(
             _error_prefix(source_path) + "canonical_uri must not contain credentials"
         )
-    for key, _ in parse_qsl(parsed.query, keep_blank_values=True):
-        normalized = key.lower().replace("-", "_")
-        if normalized in _SECRET_QUERY_KEYS:
+    parameter_sets = [parse_qsl(parsed.query, keep_blank_values=True)]
+    if "=" in parsed.fragment or "&" in parsed.fragment:
+        parameter_sets.append(parse_qsl(parsed.fragment, keep_blank_values=True))
+    for parameters in parameter_sets:
+        if any(_secret_parameter(key) for key, _ in parameters):
             raise ContractError(
                 _error_prefix(source_path)
                 + "canonical_uri must not contain secret query parameters"
             )
+        for _, parameter_value in parameters:
+            try:
+                _reject_private_paths(
+                    unquote(parameter_value),
+                    source_path=source_path,
+                )
+            except ContractError as exc:
+                raise ContractError(
+                    _error_prefix(source_path)
+                    + "canonical_uri must not contain a private path"
+                ) from exc
+
+
+def _secret_parameter(value: str) -> bool:
+    normalized = re.sub(r"[-.:]+", "_", value.casefold())
+    return normalized in _SECRET_QUERY_KEYS or normalized.endswith(
+        ("_access_token", "_api_key", "_credential", "_signature")
+    )
 
 
 def _require_unique_structured_ids(
@@ -310,15 +344,17 @@ def _require_trimmed(
     source_path: str | os.PathLike[str] | None,
 ) -> None:
     if value != value.strip() or "\x00" in value:
-        raise ContractError(_error_prefix(source_path) + f"{field_name} must be trimmed")
+        raise ContractError(
+            _error_prefix(source_path) + f"{field_name} must be trimmed"
+        )
 
 
 __all__ = [
-    "ContractError",
     "ENTRY_CONTRACT",
     "MAX_JSON_BYTES",
     "SOURCE_CONTRACT",
     "WORKSPACE_CONTRACT",
+    "ContractError",
     "canonical_json",
     "get_schema_validator",
     "load_json_document",

@@ -4,21 +4,24 @@ from pathlib import Path
 
 import pytest
 
-from agiwiki.home import HomeService
 import agiwiki.index as index_module
+from agiwiki.home import HomeService
 from agiwiki.pack import PackError, build_workspace_pack, verify_pack
 from agiwiki.paths import resolve_home_paths
-from agiwiki.runtime import MemoryRuntime, RuntimeError as MemoryRuntimeError
+from agiwiki.runtime import (
+    MemoryRuntime,
+    _estimated_tokens,
+)
+from agiwiki.runtime import (
+    RuntimeError as MemoryRuntimeError,
+)
 from agiwiki.workspace import validate_workspace
-
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 
 
 def _runtime(tmp_path: Path) -> tuple[MemoryRuntime, str, HomeService]:
-    home = HomeService(
-        resolve_home_paths({"AGIWIKI_HOME": str(tmp_path / "home")})
-    )
+    home = HomeService(resolve_home_paths({"AGIWIKI_HOME": str(tmp_path / "home")}))
     home.init()
     pack = tmp_path / "pack"
     workspace = validate_workspace(EXAMPLE)
@@ -44,7 +47,9 @@ def test_find_then_exact_get_returns_portable_source_metadata(tmp_path: Path) ->
 
     missing = runtime.find_memory("definitely absent material 987654")
     assert missing["found"] is False
-    assert runtime.get_memory("entry_99999999999999999999999999999999")["found"] is False
+    assert (
+        runtime.get_memory("entry_99999999999999999999999999999999")["found"] is False
+    )
 
 
 def test_project_marker_can_only_narrow_global_activation(tmp_path: Path) -> None:
@@ -84,9 +89,12 @@ def test_hot_find_and_exact_get_do_not_repeat_full_pack_verification(
         return original(path)
 
     home._verify = count_get
-    assert runtime.get_memory(
-        "entry_44444444444444444444444444444444", pack_id=pack_id
-    )["found"] is True
+    assert (
+        runtime.get_memory("entry_44444444444444444444444444444444", pack_id=pack_id)[
+            "found"
+        ]
+        is True
+    )
     assert get_calls == 1
 
 
@@ -112,3 +120,34 @@ def test_get_input_validation_does_not_depend_on_active_state(tmp_path: Path) ->
     runtime = MemoryRuntime(home)
     with pytest.raises(MemoryRuntimeError, match="entry_id"):
         runtime.get_memory("not-an-entry-id")
+
+
+def test_token_estimate_is_conservative_for_cjk_and_reports_truncation(
+    tmp_path: Path, monkeypatch
+) -> None:
+    runtime, pack_id, _ = _runtime(tmp_path)
+    candidate = {
+        "entry_version_id": "entryv_" + "1" * 32,
+        "entry_id": "entry_" + "2" * 32,
+        "title": "很长的候选记忆",
+        "summary": "知识" * 400,
+        "kind": "concept",
+        "score": 1.0,
+    }
+    assert _estimated_tokens(candidate) >= 800
+
+    def oversized(*args, **kwargs):
+        return {
+            "pack_id": pack_id,
+            "manifest_digest": runtime.home.registry.get_release(pack_id)[
+                "manifest_digest"
+            ],
+            "results": [candidate],
+        }
+
+    monkeypatch.setattr("agiwiki.runtime.find_pack_memory", oversized)
+    result = runtime.find_memory("知识", token_budget=256)
+    assert result["found"] is True
+    assert result["returned"] is False
+    assert result["candidate_count"] == 1
+    assert result["truncated_by_budget"] is True

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import os
 import json
+import os
 from pathlib import Path
 
 import pytest
 
+from agiwiki.codec import sha256_digest
 from agiwiki.home import HomeError, HomeService
 from agiwiki.pack import build_workspace_pack
 from agiwiki.paths import PathError, resolve_home_paths, safe_child
 from agiwiki.workspace import validate_workspace
-from agiwiki.codec import sha256_digest
-
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 

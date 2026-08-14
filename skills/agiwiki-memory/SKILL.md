@@ -16,8 +16,11 @@ material or current external state.
 2. If the tools are unavailable, say that AGIWiki is not connected; do not
    reinterpret tool absence as an empty catalog or search repository files as
    a substitute.
-3. If no match is returned, say that local factual memory has no match and use
-   the user's normal fallback. Never invent a memory.
+3. Read the search state precisely. `found: false` means there was no match. If
+   `found: true`, `returned: false`, and `truncated_by_budget: true`, the Pack did
+   match but the result did not fit; retry with a permitted larger budget or
+   report the truncation. Never turn budget truncation into “no knowledge,” and
+   never invent a memory.
 4. For a promising result, call `get_memory` with its exact `entry_id` and,
    when supplied, `entry_version_id` or `pack_id`.
 5. Check `kind`, `applies_to`, prerequisites, warnings, verification guidance,

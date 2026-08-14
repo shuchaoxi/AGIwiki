@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import shutil
 import tempfile
-from typing import Any, Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from .codec import load_json_document, sha256_digest, write_json_new
 from .pack import PackError, verify_pack
@@ -19,7 +20,6 @@ from .paths import (
     safe_child,
 )
 from .registry import HomeRegistry, RegistryError
-
 
 PROJECT_CONTRACT = "agiwiki.project-pins.v1"
 
@@ -84,11 +84,15 @@ class HomeService:
             if _identity(existing) != _identity(manifest):
                 raise HomeError("installed Pack path contains a conflicting identity")
             self.registry.insert_release(release)
-            return InstallReceipt(workspace_id, pack_id, release["manifest_digest"], True)
+            return InstallReceipt(
+                workspace_id, pack_id, release["manifest_digest"], True
+            )
 
         lock = safe_child(self.paths.staging_root, f"install-{pack_id}.lock")
         lock_fd = _acquire_lock(lock)
-        temporary = Path(tempfile.mkdtemp(prefix=f"{pack_id}-", dir=self.paths.staging_root))
+        temporary = Path(
+            tempfile.mkdtemp(prefix=f"{pack_id}-", dir=self.paths.staging_root)
+        )
         published = False
         try:
             shutil.copytree(source_path, temporary / "pack", symlinks=False)
@@ -262,12 +266,16 @@ class HomeService:
     ) -> dict[str, Any]:
         root = Path(project_root).absolute()
         marker = load_json_document(root / ".agiwiki" / "project.json")
-        if set(marker) != {
-            "contract_version",
-            "project_id",
-            "pack_ids",
-            "marker_digest",
-        } or marker["contract_version"] != PROJECT_CONTRACT:
+        if (
+            set(marker)
+            != {
+                "contract_version",
+                "project_id",
+                "pack_ids",
+                "marker_digest",
+            }
+            or marker["contract_version"] != PROJECT_CONTRACT
+        ):
             raise HomeError("project marker fields are invalid")
         body = {key: marker[key] for key in marker if key != "marker_digest"}
         if marker["marker_digest"] != sha256_digest(body):
@@ -311,10 +319,10 @@ def _acquire_lock(path: Path) -> int:
 
 
 __all__ = [
+    "PROJECT_CONTRACT",
     "ActivationReceipt",
     "Home",
     "HomeError",
     "HomeService",
     "InstallReceipt",
-    "PROJECT_CONTRACT",
 ]

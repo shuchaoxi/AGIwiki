@@ -2,30 +2,30 @@
 
 from __future__ import annotations
 
+import os
+import secrets
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-import os
 from pathlib import Path
-import secrets
 from types import MappingProxyType
-from typing import Any, Mapping, Sequence
+from typing import Any
 
+from .codec import JSONDocumentError, write_json_new
 from .contracts import (
-    ContractError,
     MAX_JSON_BYTES,
+    ContractError,
     load_json_document,
     normalize_entry,
     normalize_source,
     normalize_workspace,
     sha256_digest,
 )
-from .codec import JSONDocumentError, write_json_new
 from .quality import EntryQualityError, validate_entries_quality
 
-
 WORKSPACE_MANIFEST = "agiwiki.json"
-MAX_SOURCES = 10_000
-MAX_ENTRIES = 100_000
+MAX_SOURCES = 1_000
+MAX_ENTRIES = 10_000
 
 
 class WorkspaceError(ContractError):
@@ -297,9 +297,7 @@ def _scan_json_directory(
         if child.is_symlink():
             raise WorkspaceError(f"Workspace {label} must not contain symlinks")
         if not child.is_file() or child.suffix != ".json":
-            raise WorkspaceError(
-                f"Workspace {label} may contain only flat .json files"
-            )
+            raise WorkspaceError(f"Workspace {label} may contain only flat .json files")
         result.append(child)
     return result
 

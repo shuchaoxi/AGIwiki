@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
-from typing import Any, Sequence
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
 
 from .home import HomeService
 from .paths import resolve_home_paths

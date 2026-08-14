@@ -1,0 +1,3 @@
+[mcp_servers.agiwiki]
+command = "/absolute/path/to/AGIwiki/.venv/bin/agiwiki-mcp"
+args = ["--home", "/absolute/private/path/to/agiwiki-home"]

@@ -11,7 +11,7 @@ The first release enforces these boundaries:
 - no symlink traversal in Workspace, Pack, Home, or project markers;
 - reject common private machine paths and credential-bearing URIs from portable fields;
 - canonical content digests and a closed Pack file set;
-- atomic, no-clobber Pack installation and private Home permissions;
+- atomic, no-clobber Pack installation and Linux owner-only Home permissions;
 - exact Pack activation and scope that can only narrow active memory;
 - Pack verification before activation, indexing, search, and exact reads;
 - local stdio MCP with two read tools and no management operation;
@@ -25,3 +25,6 @@ AGIWiki does not attempt to recognize every possible secret embedded in prose.
 Workspace authors and the Agent that prepares JSON must not copy passwords,
 tokens, private keys, raw confidential logs, or unnecessary original text into
 an Entry.
+
+The complete permission and lifecycle path is currently validated on Linux. Windows path
+routing is experimental, and POSIX `chmod` calls are not a substitute for Windows ACL review.

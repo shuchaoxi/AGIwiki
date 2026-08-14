@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -14,7 +14,6 @@ from agiwiki.workspace import (
     validate_workspace,
     workspace_digest,
 )
-
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 SOURCE_ID = "src_22222222222222222222222222222222"
@@ -90,7 +89,7 @@ def test_minimal_workspace_loads_and_locates_editable_entry() -> None:
     assert workspace.workspace_id == "ws_11111111111111111111111111111111"
     assert len(workspace.sources) == 1
     assert len(workspace.entries) == 4
-    assert workspace.source(SOURCE_ID)["title"] == "Python json 模块文档"
+    assert workspace.source(SOURCE_ID)["title"] == "AGIWiki JSON 示例证据笔记"
     assert workspace.entry(FACT_ID)["kind"] == "fact"
     assert workspace.locate_entry(FACT_ID).name == "fact-ensure-ascii.json"
     assert workspace.workspace_digest.startswith("sha256:")
@@ -181,9 +180,7 @@ def test_every_source_ref_and_relation_must_resolve_inside_workspace(
         load_workspace(root)
 
     fact["source_refs"][0]["source_id"] = SOURCE_ID
-    fact["relations"][0]["target_entry_id"] = (
-        "entry_99999999999999999999999999999999"
-    )
+    fact["relations"][0]["target_entry_id"] = "entry_99999999999999999999999999999999"
     _write(fact_path, fact)
     with pytest.raises(WorkspaceError, match="relation target.*not in this Workspace"):
         load_workspace(root)
@@ -241,7 +238,9 @@ def test_workspace_json_directories_are_flat_and_closed(
         load_workspace(root)
 
 
-def test_duplicate_json_key_is_rejected_with_the_source_filename(tmp_path: Path) -> None:
+def test_duplicate_json_key_is_rejected_with_the_source_filename(
+    tmp_path: Path,
+) -> None:
     root = _copy_example(tmp_path)
     source = root / "sources" / "python-json-manual.json"
     source.write_text(

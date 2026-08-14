@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import sqlite3
 
 import pytest
+from test_pack import ENTRY_ID, entry, source, workspace
 
 import agiwiki.index as index_module
 from agiwiki.index import (
-    IndexError,
     TOKENIZER_FALLBACK,
+    IndexError,
     build_index,
     ensure_index,
     find_memory,
@@ -17,7 +18,6 @@ from agiwiki.index import (
     verify_index,
 )
 from agiwiki.pack import PackError, build_pack, verify_pack
-from test_pack import ENTRY_ID, entry, source, workspace
 
 
 def test_index_is_external_rebuildable_and_searches_pack(tmp_path: Path) -> None:
@@ -58,11 +58,21 @@ def test_natural_language_fallback_ranks_the_specific_entry_first(
         entry_id="entry_" + "7" * 32,
         title="导出 Zemax 分析报告",
     )
-    report["summary"] = "把已经完成的分析结果导出为独立报告，并重新打开文件检查内容完整性。"
-    report["content"]["goal"] = "将当前分析结果写入一个新报告文件，同时保留原始工程和已有输出。"
-    report["content"]["steps"][0]["action"] = "选择报告导出功能，并指定一个尚不存在的新文件作为目标。"
-    report["content"]["steps"][0]["expected_result"] = "目标位置出现新的报告文件，原始工程文件保持不变。"
-    report["content"]["steps"][0]["verification"] = "重新打开导出的报告，并核对标题、分析参数和结果段落。"
+    report["summary"] = (
+        "把已经完成的分析结果导出为独立报告，并重新打开文件检查内容完整性。"
+    )
+    report["content"]["goal"] = (
+        "将当前分析结果写入一个新报告文件，同时保留原始工程和已有输出。"
+    )
+    report["content"]["steps"][0]["action"] = (
+        "选择报告导出功能，并指定一个尚不存在的新文件作为目标。"
+    )
+    report["content"]["steps"][0]["expected_result"] = (
+        "目标位置出现新的报告文件，原始工程文件保持不变。"
+    )
+    report["content"]["steps"][0]["verification"] = (
+        "重新打开导出的报告，并核对标题、分析参数和结果段落。"
+    )
     report["keywords"] = ["zemax", "分析报告", "导出"]
     build_pack(workspace(), [source()], [entry(), report], pack)
     build_index(pack, cache)
@@ -73,6 +83,34 @@ def test_natural_language_fallback_ranks_the_specific_entry_first(
     assert result["results"][0]["entry_id"] == ENTRY_ID
 
 
+def test_fallback_does_not_recall_entries_from_question_stopwords(
+    tmp_path: Path,
+) -> None:
+    pack = tmp_path / "pack"
+    cache = tmp_path / "search.sqlite"
+    database = entry(title="备份并恢复本地数据库")
+    database["summary"] = "先创建可验证的数据库备份，再在隔离位置恢复并检查数据完整性。"
+    database["content"]["goal"] = "创建数据库备份，并通过隔离恢复确认备份确实可以使用。"
+    database["content"]["steps"][0]["action"] = (
+        "执行数据库备份，并把结果写入一个新的备份文件。"
+    )
+    database["content"]["steps"][0]["expected_result"] = (
+        "生成新的备份文件，原数据库仍然保持可用。"
+    )
+    database["content"]["steps"][0]["verification"] = (
+        "在隔离位置恢复备份，并检查关键数据和完整性状态。"
+    )
+    database["keywords"] = ["数据库", "备份", "恢复"]
+    build_pack(workspace(), [source()], [database], pack)
+    build_index(pack, cache)
+
+    specific = find_memory(pack, cache, "数据库如何备份恢复")
+    generic = find_memory(pack, cache, "请问如何操作")
+
+    assert specific["results"][0]["entry_id"] == ENTRY_ID
+    assert generic["count"] == 0
+
+
 def test_index_exact_replay_and_conflicting_pack_does_not_clobber(
     tmp_path: Path,
 ) -> None:
@@ -80,7 +118,9 @@ def test_index_exact_replay_and_conflicting_pack_does_not_clobber(
     second = tmp_path / "pack-two"
     cache = tmp_path / "search.sqlite"
     build_pack(workspace(), [source()], [entry()], first)
-    build_pack(workspace(version="2.0.0"), [source()], [entry(title="新版光源")], second)
+    build_pack(
+        workspace(version="2.0.0"), [source()], [entry(title="新版光源")], second
+    )
     original = build_index(first, cache)
     assert build_index(first, cache)["replayed"] is True
 
@@ -98,7 +138,9 @@ def test_ensure_index_replaces_tampered_or_stale_cache(tmp_path: Path) -> None:
     second = tmp_path / "pack-two"
     cache = tmp_path / "search.sqlite"
     build_pack(workspace(), [source()], [entry()], first)
-    build_pack(workspace(version="2"), [source()], [entry(title="更新后的流程")], second)
+    build_pack(
+        workspace(version="2"), [source()], [entry(title="更新后的流程")], second
+    )
     build_index(first, cache)
 
     metadata = ensure_index(second, cache)

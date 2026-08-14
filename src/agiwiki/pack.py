@@ -10,20 +10,23 @@ cache built by :mod:`agiwiki.index`.
 
 from __future__ import annotations
 
-from copy import deepcopy
 import ctypes
 import errno
 import os
-from pathlib import Path
 import re
 import shutil
 import tempfile
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
 
 from .codec import (
     JSONDocumentError,
+    canonical_json_bytes,
     file_sha256,
     load_json_document,
+    load_json_document_with_bytes,
     sha256_digest,
     stable_id,
     write_json_new,
@@ -35,11 +38,15 @@ from .contracts import (
     normalize_workspace,
     validate_document,
 )
-from .quality import EntryQualityError, validate_entries_quality, validate_entry_quality
+from .quality import (
+    ENTRY_QUALITY_POLICY,
+    EntryQualityError,
+    validate_entries_quality,
+    validate_entry_quality,
+)
 from .workspace import workspace_digest as calculate_workspace_digest
 
-
-PACK_CONTRACT = "agiwiki.memory-pack.v1"
+PACK_CONTRACT = "agiwiki.memory-pack.v2"
 PACK_FORMAT = "portable-json-directory-v1"
 PACK_ENTRY_CONTRACT = "agiwiki.pack-entry.v1"
 PACK_SOURCES_CONTRACT = "agiwiki.pack-sources.v1"
@@ -68,7 +75,9 @@ def build_workspace_pack(
             destination,
         )
     except AttributeError as exc:
-        raise PackError("workspace does not expose manifest, sources and entries") from exc
+        raise PackError(
+            "workspace does not expose manifest, sources and entries"
+        ) from exc
 
 
 def build_pack(
@@ -126,6 +135,7 @@ def build_pack(
         pack_manifest: dict[str, Any] = {
             "contract_version": PACK_CONTRACT,
             "format": PACK_FORMAT,
+            "quality_policy": ENTRY_QUALITY_POLICY,
             "workspace": workspace,
             "workspace_id": workspace["workspace_id"],
             "workspace_digest": identity["workspace_digest"],
@@ -159,7 +169,7 @@ def verify_pack(path: str | os.PathLike[str]) -> dict[str, Any]:
     """Fully authenticate a Pack's identity, JSON contracts and closed file set."""
 
     root = _safe_pack_root(path)
-    manifest = _load_pack_manifest_unverified(root)
+    manifest = _load_canonical_pack_json(root / "pack.json", label="Pack manifest")
     _validate_manifest_shape(manifest)
     body = {key: value for key, value in manifest.items() if key != "manifest_digest"}
     if manifest["manifest_digest"] != sha256_digest(body):
@@ -183,7 +193,9 @@ def verify_pack(path: str | os.PathLike[str]) -> dict[str, Any]:
         if file_sha256(root / relative) != expected:
             raise PackError("Pack output digest mismatch")
 
-    source_envelope = load_json_document(root / "sources.json")
+    source_envelope = _load_canonical_pack_json(
+        root / "sources.json", label="sources envelope"
+    )
     validate_document("pack-sources", source_envelope)
     _require_exact_keys(
         source_envelope,
@@ -204,7 +216,9 @@ def verify_pack(path: str | os.PathLike[str]) -> dict[str, Any]:
 
     entry_envelopes: list[dict[str, Any]] = []
     for reference in manifest["entry_refs"]:
-        envelope = load_json_document(root / reference["path"])
+        envelope = _load_canonical_pack_json(
+            root / reference["path"], label="entry envelope"
+        )
         normalized = _normalize_entry_envelope(envelope)
         if normalized != envelope:
             raise PackError("Pack entry envelope is not canonical")
@@ -236,14 +250,13 @@ def verify_pack(path: str | os.PathLike[str]) -> dict[str, Any]:
         raise PackError("Pack identity does not match its canonical content")
     expected_outputs = {
         "sources.json": file_sha256(root / "sources.json"),
-        **{
-            item["path"]: file_sha256(root / item["path"])
-            for item in entry_refs
-        },
+        **{item["path"]: file_sha256(root / item["path"]) for item in entry_refs},
     }
     if manifest["outputs"] != dict(sorted(expected_outputs.items())):
         raise PackError("Pack output manifest does not match its content")
-    _validate_source_references(normalized_sources, tuple(item["entry"] for item in entry_envelopes))
+    verified_entries = tuple(item["entry"] for item in entry_envelopes)
+    _validate_source_references(normalized_sources, verified_entries)
+    _validate_entry_relations(verified_entries)
     return deepcopy(manifest)
 
 
@@ -252,7 +265,11 @@ def load_pack_manifest(
     *,
     verify: bool = True,
 ) -> dict[str, Any]:
-    return verify_pack(path) if verify else _load_pack_manifest_unverified(_safe_pack_root(path))
+    return (
+        verify_pack(path)
+        if verify
+        else _load_pack_manifest_unverified(_safe_pack_root(path))
+    )
 
 
 def pack_identity(manifest: Mapping[str, Any]) -> dict[str, str]:
@@ -276,7 +293,10 @@ def iter_entries(
     result: list[dict[str, Any]] = []
     for reference in manifest["entry_refs"]:
         envelope = load_json_document(root / reference["path"])
-        if file_sha256(root / reference["path"]) != manifest["outputs"][reference["path"]]:
+        if (
+            file_sha256(root / reference["path"])
+            != manifest["outputs"][reference["path"]]
+        ):
             raise PackError("Pack entry changed after manifest verification")
         if _normalize_entry_envelope(envelope) != envelope:
             raise PackError("Pack entry envelope is not canonical")
@@ -336,7 +356,8 @@ def find_memory(
 ) -> dict[str, Any]:
     """Query a disposable index, rebuilding it when absent or stale."""
 
-    from .index import ensure_index, find_memory as find_indexed_memory
+    from .index import ensure_index
+    from .index import find_memory as find_indexed_memory
 
     target = Path(index_path)
     if target.exists() and not target.is_symlink():
@@ -359,10 +380,16 @@ def _normalize_inputs(
         raise PackError("entries must be a sequence")
     workspace = normalize_workspace(manifest)
     normalized_sources = tuple(
-        sorted((normalize_source(item) for item in sources), key=lambda item: item["source_id"])
+        sorted(
+            (normalize_source(item) for item in sources),
+            key=lambda item: item["source_id"],
+        )
     )
     normalized_entries = tuple(
-        sorted((normalize_entry(item) for item in entries), key=lambda item: item["entry_id"])
+        sorted(
+            (normalize_entry(item) for item in entries),
+            key=lambda item: item["entry_id"],
+        )
     )
     if not normalized_entries:
         raise PackError("a Pack must contain at least one entry")
@@ -373,6 +400,7 @@ def _normalize_inputs(
     except EntryQualityError as exc:
         raise PackError(str(exc)) from exc
     _validate_source_references(normalized_sources, normalized_entries)
+    _validate_entry_relations(normalized_entries)
     return workspace, normalized_sources, normalized_entries
 
 
@@ -424,7 +452,9 @@ def _entry_artifacts(
             }
         )
         envelopes.append(envelope)
-    pairs = sorted(zip(envelopes, refs, strict=True), key=lambda pair: pair[1]["entry_id"])
+    pairs = sorted(
+        zip(envelopes, refs, strict=True), key=lambda pair: pair[1]["entry_id"]
+    )
     envelopes = [pair[0] for pair in pairs]
     refs = [pair[1] for pair in pairs]
     return envelopes, refs, sha256_digest(refs)
@@ -474,6 +504,7 @@ def _pack_identity(
         {
             "contract_version": PACK_CONTRACT,
             "format": PACK_FORMAT,
+            "quality_policy": ENTRY_QUALITY_POLICY,
             "workspace_id": workspace["workspace_id"],
             "workspace_digest": workspace_digest,
             "sources_digest": sources_digest,
@@ -488,6 +519,7 @@ def _validate_manifest_shape(value: Mapping[str, Any]) -> None:
     keys = {
         "contract_version",
         "format",
+        "quality_policy",
         "workspace",
         "workspace_id",
         "workspace_digest",
@@ -504,9 +536,19 @@ def _validate_manifest_shape(value: Mapping[str, Any]) -> None:
     _require_exact_keys(value, keys, "Pack manifest")
     if value["contract_version"] != PACK_CONTRACT or value["format"] != PACK_FORMAT:
         raise PackError("Pack contract or format is unsupported")
-    if not isinstance(value["pack_id"], str) or _PACK_ID.fullmatch(value["pack_id"]) is None:
+    if value["quality_policy"] != ENTRY_QUALITY_POLICY:
+        raise PackError("Pack quality policy is unsupported")
+    if (
+        not isinstance(value["pack_id"], str)
+        or _PACK_ID.fullmatch(value["pack_id"]) is None
+    ):
         raise PackError("Pack ID is invalid")
-    for field in ("workspace_digest", "sources_digest", "entries_digest", "manifest_digest"):
+    for field in (
+        "workspace_digest",
+        "sources_digest",
+        "entries_digest",
+        "manifest_digest",
+    ):
         if not isinstance(value[field], str) or _DIGEST.fullmatch(value[field]) is None:
             raise PackError(f"{field} is invalid")
     if type(value["source_count"]) is not int or value["source_count"] < 0:
@@ -538,7 +580,10 @@ def _validate_source_refs(value: Any) -> None:
         if source_id <= previous:
             raise PackError("source references must be sorted and unique")
         previous = source_id
-        if not isinstance(item["source_digest"], str) or _DIGEST.fullmatch(item["source_digest"]) is None:
+        if (
+            not isinstance(item["source_digest"], str)
+            or _DIGEST.fullmatch(item["source_digest"]) is None
+        ):
             raise PackError("source reference digest is invalid")
 
 
@@ -559,11 +604,17 @@ def _validate_entry_refs(value: Any) -> None:
         if entry_id <= previous:
             raise PackError("entry references must be sorted and unique")
         previous = entry_id
-        if not isinstance(version_id, str) or _ENTRY_VERSION_ID.fullmatch(version_id) is None:
+        if (
+            not isinstance(version_id, str)
+            or _ENTRY_VERSION_ID.fullmatch(version_id) is None
+        ):
             raise PackError("entry version ID is invalid")
         if item["path"] != f"entries/{version_id}.json":
             raise PackError("entry reference path is not derived from its version")
-        if not isinstance(item["entry_digest"], str) or _DIGEST.fullmatch(item["entry_digest"]) is None:
+        if (
+            not isinstance(item["entry_digest"], str)
+            or _DIGEST.fullmatch(item["entry_digest"]) is None
+        ):
             raise PackError("entry reference digest is invalid")
 
 
@@ -574,7 +625,10 @@ def _validate_relative_output(value: Any) -> None:
         or value.startswith("/")
         or "\\" in value
         or any(part in {"", ".", ".."} for part in value.split("/"))
-        or (value != "sources.json" and re.fullmatch(r"entries/entryv_[a-f0-9]{32}\.json", value) is None)
+        or (
+            value != "sources.json"
+            and re.fullmatch(r"entries/entryv_[a-f0-9]{32}\.json", value) is None
+        )
     ):
         raise PackError("Pack output path is invalid")
 
@@ -590,11 +644,33 @@ def _validate_source_references(
                 raise PackError("entry references a Source absent from the Pack")
 
 
+def _validate_entry_relations(entries: Sequence[Mapping[str, Any]]) -> None:
+    entry_ids = {item["entry_id"] for item in entries}
+    for entry in entries:
+        for relation in entry["relations"]:
+            target = relation["target_entry_id"]
+            if target not in entry_ids:
+                raise PackError("entry relation target is absent from the Pack")
+            if target == entry["entry_id"]:
+                raise PackError("entry relation cannot target itself")
+
+
 def _load_pack_manifest_unverified(root: Path) -> dict[str, Any]:
     try:
         return load_json_document(root / "pack.json")
     except JSONDocumentError as exc:
         raise PackError("Pack manifest is invalid") from exc
+
+
+def _load_canonical_pack_json(path: Path, *, label: str) -> dict[str, Any]:
+    try:
+        value, payload = load_json_document_with_bytes(path)
+        expected = canonical_json_bytes(value) + b"\n"
+        if payload != expected:
+            raise PackError(f"{label} is not canonical JSON bytes")
+        return value
+    except JSONDocumentError as exc:
+        raise PackError(f"{label} is invalid") from exc
 
 
 def _safe_pack_root(path: str | os.PathLike[str]) -> Path:

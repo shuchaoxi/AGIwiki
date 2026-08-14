@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import stat
+from pathlib import Path
 from typing import Any
 
 from .pack import verify_pack
@@ -32,8 +32,10 @@ def inspect_home(paths: HomePaths | None = None) -> dict[str, Any]:
     try:
         metadata = registry.metadata()
         checks.append({"name": "registry", "status": "OK", **metadata})
-    except Exception as exc:
-        checks.append({"name": "registry", "status": "ERROR", "error": type(exc).__name__})
+    except Exception as exc:  # noqa: BLE001 - diagnostics must report corruption
+        checks.append(
+            {"name": "registry", "status": "ERROR", "error": type(exc).__name__}
+        )
         return _report(checks)
     for release in registry.list_releases():
         try:
@@ -49,7 +51,7 @@ def inspect_home(paths: HomePaths | None = None) -> dict[str, Any]:
             checks.append(
                 {"name": "release", "pack_id": release["pack_id"], "status": "OK"}
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - diagnose every broken release
             checks.append(
                 {
                     "name": "release",

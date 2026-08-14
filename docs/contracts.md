@@ -28,6 +28,10 @@ digest, and locator and preserving uncertainty during authoring.
 `agiwiki.json` identifies one editable knowledge collection and its release
 version. Filenames do not determine identity.
 
+`find_memory` distinguishes retrieval from delivery: `found` means at least one candidate
+matched, while `returned` means at least one candidate fit the current Token budget.
+`truncated_by_budget` prevents a real match from being misreported as an empty knowledge base.
+
 ## Source
 
 A Source records a stable `source_id`, media kind, title, edition, content
@@ -52,9 +56,11 @@ Every Entry cites at least one Source through a portable locator. The derived
 ## Memory Pack
 
 The Pack manifest binds the exact Workspace, Source set, Entry revisions,
-output files, and their digests. `pack_id` derives from canonical portable
+quality-policy version, output files, and their digests. `pack_id` derives from canonical portable
 semantics. Timestamps, file locations, SQLite bytes, and local activation state
-never enter its identity.
+never enter its identity. Version 2 also requires every JSON file's bytes to be the canonical
+UTF-8 encoding plus one trailing newline; reformatting creates an invalid artifact rather than
+another byte representation of the same Pack.
 
 The schemas live in [`src/agiwiki/schemas`](../src/agiwiki/schemas). The
 [`examples/minimal-memory`](../examples/minimal-memory) Workspace contains one

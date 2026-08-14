@@ -10,10 +10,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from pathlib import Path
 import stat
-from typing import Any, Mapping
-
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
 
 DEFAULT_MAX_JSON_BYTES = 8 * 1024 * 1024
 
@@ -71,6 +71,17 @@ def load_json_document(
     and the pathname must still designate that same object.
     """
 
+    value, _ = load_json_document_with_bytes(path, max_bytes=max_bytes)
+    return value
+
+
+def load_json_document_with_bytes(
+    path: str | os.PathLike[str],
+    *,
+    max_bytes: int = DEFAULT_MAX_JSON_BYTES,
+) -> tuple[dict[str, Any], bytes]:
+    """Return a parsed object and the exact bytes from one stable descriptor."""
+
     if type(max_bytes) is not int or max_bytes < 2:
         raise JSONDocumentError("max_bytes must be an integer greater than one")
     candidate = Path(path)
@@ -117,7 +128,7 @@ def load_json_document(
     if not isinstance(value, dict):
         raise JSONDocumentError("JSON document root must be an object")
     canonical_json(value)
-    return value
+    return value, bytes(payload)
 
 
 def write_json_new(path: str | os.PathLike[str], value: Mapping[str, Any]) -> None:
@@ -127,14 +138,11 @@ def write_json_new(path: str | os.PathLike[str], value: Mapping[str, Any]) -> No
     if target.is_symlink():
         raise FileExistsError("JSON output already exists as a symlink")
     payload = canonical_json_bytes(dict(value)) + b"\n"
-    try:
-        descriptor = os.open(
-            target,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0),
-            0o600,
-        )
-    except OSError:
-        raise
+    descriptor = os.open(
+        target,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0),
+        0o600,
+    )
     try:
         remaining = memoryview(payload)
         while remaining:
@@ -220,6 +228,7 @@ __all__ = [
     "canonical_json_bytes",
     "file_sha256",
     "load_json_document",
+    "load_json_document_with_bytes",
     "sha256_digest",
     "stable_id",
     "write_json_new",

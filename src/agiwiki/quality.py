@@ -8,10 +8,9 @@ being validated or packed.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from collections.abc import Callable
-from typing import Any, Mapping, Sequence
-
+from typing import Any
 
 ENTRY_QUALITY_POLICY = "agiwiki.entry-quality.v1"
 
@@ -30,6 +29,8 @@ def validate_entry_quality(
     prefix = "" if source_path is None else f"{Path(source_path)}: "
     entry_id = str(entry["entry_id"])
 
+    _reject_blank_strings(entry, prefix=prefix, entry_id=entry_id)
+
     def require_text(value: str, minimum: int, pointer: str) -> None:
         if _information_length(value) < minimum:
             raise EntryQualityError(
@@ -38,9 +39,10 @@ def validate_entry_quality(
             )
 
     require_text(str(entry["summary"]), 16, "/summary")
-    if len(entry["keywords"]) < 2:
+    normalized_keywords = {str(item).strip().casefold() for item in entry["keywords"]}
+    if len(normalized_keywords) < 2:
         raise EntryQualityError(
-            f"{prefix}{entry_id} needs at least two retrieval keywords"
+            f"{prefix}{entry_id} needs at least two distinct retrieval keywords"
         )
 
     content = entry["content"]
@@ -63,9 +65,7 @@ def validate_entry_quality(
         for index, step in enumerate(content["steps"]):
             base = f"/content/steps/{index}"
             require_text(str(step["action"]), 8, f"{base}/action")
-            require_text(
-                str(step["expected_result"]), 8, f"{base}/expected_result"
-            )
+            require_text(str(step["expected_result"]), 8, f"{base}/expected_result")
             require_text(str(step["verification"]), 8, f"{base}/verification")
         _require_text_list(
             content["verification"],
@@ -106,6 +106,23 @@ def validate_entries_quality(
 
 def _information_length(value: str) -> int:
     return sum(1 for character in value if character.isalnum())
+
+
+def _reject_blank_strings(value: Any, *, prefix: str, entry_id: str) -> None:
+    stack: list[tuple[str, Any]] = [("", value)]
+    while stack:
+        pointer, current = stack.pop()
+        if isinstance(current, str):
+            if not current.strip():
+                raise EntryQualityError(
+                    f"{prefix}{entry_id} contains blank text at {pointer or '/'}"
+                )
+        elif isinstance(current, Mapping):
+            stack.extend((f"{pointer}/{key}", child) for key, child in current.items())
+        elif isinstance(current, Sequence) and not isinstance(current, (str, bytes)):
+            stack.extend(
+                (f"{pointer}/{index}", child) for index, child in enumerate(current)
+            )
 
 
 def _require_text_list(

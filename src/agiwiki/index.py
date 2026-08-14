@@ -2,25 +2,64 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 import json
 import os
-from pathlib import Path
 import re
 import sqlite3
 import stat
 import tempfile
-from typing import Any, Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 from .codec import canonical_json, sha256_digest
 from .pack import PackError, iter_entries, verify_pack
 
-
 INDEX_CONTRACT = "agiwiki.memory-index.v1"
 TOKENIZER_TRIGRAM = "trigram"
 TOKENIZER_FALLBACK = "unicode61"
 _QUERY_PART = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.:+-]*|[\u3400-\u9fff]+")
+_ENGLISH_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "can",
+    "do",
+    "for",
+    "how",
+    "is",
+    "of",
+    "please",
+    "the",
+    "to",
+    "what",
+    "when",
+    "where",
+    "which",
+    "with",
+}
+_CJK_STOPWORDS = {
+    "一下",
+    "什么",
+    "可以",
+    "如何",
+    "怎么",
+    "怎样",
+    "是否",
+    "有关",
+    "相关",
+    "能否",
+    "请问",
+    "这个",
+    "那个",
+    "进行",
+    "操作",
+    "方法",
+    "步骤",
+    "问题",
+}
 
 
 class IndexError(ValueError):
@@ -113,9 +152,11 @@ def verify_index(
     # cache, so correctness is more important than avoiding a second bounded
     # Pack walk at this build-time boundary.
     expected_entries = iter_entries(pack_path, verify=False)
-    with _database_snapshot(target) as snapshot:
-        with _readonly_database(snapshot) as connection:
-            return _verify_connection(connection, manifest, expected_entries)
+    with (
+        _database_snapshot(target) as snapshot,
+        _readonly_database(snapshot) as connection,
+    ):
+        return _verify_connection(connection, manifest, expected_entries)
 
 
 def find_memory(
@@ -133,42 +174,44 @@ def find_memory(
     manifest = verify_pack(pack_path)
     entries = iter_entries(pack_path, verify=False)
     target = _safe_existing_index(index_path)
-    with _database_snapshot(target) as snapshot:
-        with _readonly_database(snapshot) as connection:
-            metadata = _verify_connection(connection, manifest, entries)
-            fallback_ranked = False
-            try:
-                if metadata["tokenizer"] == TOKENIZER_TRIGRAM and len(normalized) < 3:
-                    escaped = (
-                        normalized.replace("\\", "\\\\")
-                        .replace("%", "\\%")
-                        .replace("_", "\\_")
-                    )
-                    rows = connection.execute(
-                        """
+    with (
+        _database_snapshot(target) as snapshot,
+        _readonly_database(snapshot) as connection,
+    ):
+        metadata = _verify_connection(connection, manifest, entries)
+        fallback_ranked = False
+        try:
+            if metadata["tokenizer"] == TOKENIZER_TRIGRAM and len(normalized) < 3:
+                escaped = (
+                    normalized.replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_")
+                )
+                rows = connection.execute(
+                    """
                         SELECT entry_version_id,entry_id,title,summary,kind,0.0
                         FROM entry_fts
                         WHERE search_text LIKE ? ESCAPE '\\'
                         ORDER BY entry_id LIMIT ?
                         """,
-                        (f"%{escaped}%", limit),
-                    ).fetchall()
-                else:
-                    phrase = '"' + normalized.replace('"', '""') + '"'
-                    rows = connection.execute(
-                        """
+                    (f"%{escaped}%", limit),
+                ).fetchall()
+            else:
+                phrase = '"' + normalized.replace('"', '""') + '"'
+                rows = connection.execute(
+                    """
                         SELECT entry_version_id,entry_id,title,summary,kind,
                                bm25(entry_fts)
                         FROM entry_fts WHERE entry_fts MATCH ?
                         ORDER BY bm25(entry_fts),entry_id LIMIT ?
                         """,
-                        (phrase, limit),
-                    ).fetchall()
-                if not rows:
-                    rows = _fallback_search(connection, normalized, limit=limit)
-                    fallback_ranked = True
-            except sqlite3.Error as exc:
-                raise IndexError("search query failed") from exc
+                    (phrase, limit),
+                ).fetchall()
+            if not rows:
+                rows = _fallback_search(connection, normalized, limit=limit)
+                fallback_ranked = True
+        except sqlite3.Error as exc:
+            raise IndexError("search query failed") from exc
     return {
         "contract_version": "agiwiki.memory-search.v1",
         "pack_id": metadata["pack_id"],
@@ -369,6 +412,8 @@ def _fallback_search(
     """Recall partial natural-language matches after exact FTS phrase failure."""
 
     terms = _fallback_terms(query)
+    if not terms:
+        return []
     score_parts: list[str] = []
     score_parameters: list[str] = []
     where_parts: list[str] = []
@@ -386,9 +431,9 @@ def _fallback_search(
         where_parameters.append(pattern)
     statement = f"""
         SELECT entry_version_id,entry_id,title,summary,kind,
-               ({' + '.join(score_parts)}) AS relevance
+               ({" + ".join(score_parts)}) AS relevance
         FROM entry_fts
-        WHERE {' OR '.join(where_parts)}
+        WHERE {" OR ".join(where_parts)}
         ORDER BY relevance DESC,entry_id
         LIMIT ?
     """
@@ -403,15 +448,20 @@ def _fallback_terms(query: str) -> tuple[str, ...]:
     for match in _QUERY_PART.finditer(query):
         value = match.group(0)
         if "\u3400" <= value[0] <= "\u9fff":
-            if len(value) <= 3:
+            if value not in _CJK_STOPWORDS:
                 terms.append(value)
-            else:
-                terms.append(value)
-                terms.extend(value[index : index + 2] for index in range(len(value) - 1))
+            if len(value) > 3:
+                terms.extend(
+                    part
+                    for index in range(len(value) - 1)
+                    if (part := value[index : index + 2]) not in _CJK_STOPWORDS
+                )
         elif len(value) >= 2:
-            terms.append(value.casefold())
+            folded = value.casefold()
+            if folded not in _ENGLISH_STOPWORDS:
+                terms.append(folded)
     unique = tuple(dict.fromkeys(terms))[:32]
-    return unique or (query,)
+    return unique
 
 
 def _safe_index_target(path: str | os.PathLike[str]) -> Path:
@@ -547,9 +597,9 @@ def _metadata_projection(value: Mapping[str, Any]) -> dict[str, Any]:
 
 __all__ = [
     "INDEX_CONTRACT",
-    "IndexError",
     "TOKENIZER_FALLBACK",
     "TOKENIZER_TRIGRAM",
+    "IndexError",
     "build_index",
     "ensure_index",
     "find_memory",

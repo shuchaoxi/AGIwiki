@@ -16,7 +16,8 @@ directories are not copied. Their dependency closure includes public Capsule,
 Wiki, rights, visibility, publication, outcome, source-replay, and governance
 objects that are outside the personal product.
 
-The new code freezes four small contracts:
+The new code freezes four small contracts (the first public Pack manifest is
+`agiwiki.memory-pack.v2`):
 
 1. Workspace project;
 2. Source descriptor;

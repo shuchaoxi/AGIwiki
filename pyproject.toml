@@ -9,12 +9,14 @@ description = "Local-first personal factual memory for AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
-license-files = ["LICENSE", "NOTICE"]
+license-files = ["LICENSE", "NOTICE", "ORIGIN.md"]
 authors = [{name = "shuchaoxi"}]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "jsonschema>=4.20,<5",
@@ -22,11 +24,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mcp = ["mcp[cli]>=1.27,<2"]
+mcp = ["mcp>=1.28.1,<2"]
 dev = [
   "build>=1.2,<2",
+  "pip-audit>=2.9,<3",
   "pytest>=8,<10",
-  "ruff>=0.15,<1",
+  "ruff==0.16.3",
+  "twine>=6,<7",
 ]
 
 [project.scripts]
@@ -34,9 +38,10 @@ agiwiki = "agiwiki.cli:main"
 agiwiki-mcp = "agiwiki.mcp:main"
 
 [project.urls]
-Homepage = "https://agiwiki.net"
-Repository = "https://github.com/shuchaoxi/AGIWiki"
-Issues = "https://github.com/shuchaoxi/AGIWiki/issues"
+Homepage = "https://github.com/shuchaoxi/AGIwiki"
+Repository = "https://github.com/shuchaoxi/AGIwiki"
+Issues = "https://github.com/shuchaoxi/AGIwiki/issues"
+Changelog = "https://github.com/shuchaoxi/AGIwiki/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

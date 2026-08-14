@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, is_dataclass
 import json
 import sys
-from typing import Any, Sequence
+from collections.abc import Sequence
+from dataclasses import asdict, is_dataclass
+from typing import Any
 
+from . import __version__
 from .doctor import inspect_home
 from .home import HomeService
 from .mcp import main as mcp_main
@@ -30,9 +32,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = _dispatch(args)
     except (OSError, ValueError, KeyError) as exc:
         print(
-            json.dumps(
-                {"ok": False, "error": type(exc).__name__, "message": str(exc)}
-            ),
+            json.dumps({"ok": False, "error": type(exc).__name__, "message": str(exc)}),
             file=sys.stderr,
         )
         return 2
@@ -67,7 +67,9 @@ def _dispatch(args: argparse.Namespace) -> Any:
             "entry_count": len(workspace.entries),
         }
     if args.area == "pack" and args.action == "build":
-        return build_workspace_pack(validate_workspace(args.workspace), args.destination)
+        return build_workspace_pack(
+            validate_workspace(args.workspace), args.destination
+        )
     if args.area == "pack" and args.action == "verify":
         manifest = verify_pack(args.path)
         return {
@@ -121,6 +123,9 @@ def _dispatch(args: argparse.Namespace) -> Any:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agiwiki")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     parser.add_argument("--home", help="override the private AGIWiki Home")
     areas = parser.add_subparsers(dest="area", required=True)
 
