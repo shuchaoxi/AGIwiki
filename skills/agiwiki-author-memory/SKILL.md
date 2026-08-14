@@ -34,6 +34,9 @@ paragraph; select facts that will be useful again.
      failure guidance, and warnings;
    - `troubleshooting`: symptoms, diagnostic branches, fixes, verification, escalation,
      and warnings.
+   Make summaries self-contained enough to identify the subject, applicable condition, and
+   conclusion. Preserve qualifiers and failure boundaries instead of compressing them into a
+   slogan. `workspace validate` rejects obvious one-word and underspecified placeholders.
 7. Give every Entry at least one exact Source locator. Use `direct` only when the cited
    material explicitly supports the claim; otherwise use `indirect`. Do not invent page,
    section, line, or time positions.

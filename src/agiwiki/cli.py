@@ -13,6 +13,7 @@ from .home import HomeService
 from .mcp import main as mcp_main
 from .pack import build_workspace_pack, verify_pack
 from .paths import resolve_home_paths
+from .quality import ENTRY_QUALITY_POLICY
 from .runtime import MemoryRuntime
 from .workspace import initialize_workspace, validate_workspace
 
@@ -59,6 +60,7 @@ def _dispatch(args: argparse.Namespace) -> Any:
         workspace = validate_workspace(args.path)
         return {
             "ok": True,
+            "quality_policy": ENTRY_QUALITY_POLICY,
             "workspace_id": workspace.workspace_id,
             "workspace_digest": workspace.workspace_digest,
             "source_count": len(workspace.sources),

@@ -35,6 +35,7 @@ from .contracts import (
     normalize_workspace,
     validate_document,
 )
+from .quality import EntryQualityError, validate_entries_quality, validate_entry_quality
 from .workspace import workspace_digest as calculate_workspace_digest
 
 
@@ -367,6 +368,10 @@ def _normalize_inputs(
         raise PackError("a Pack must contain at least one entry")
     _require_unique_ids(normalized_sources, "source_id")
     _require_unique_ids(normalized_entries, "entry_id")
+    try:
+        validate_entries_quality(normalized_entries)
+    except EntryQualityError as exc:
+        raise PackError(str(exc)) from exc
     _validate_source_references(normalized_sources, normalized_entries)
     return workspace, normalized_sources, normalized_entries
 
@@ -435,6 +440,10 @@ def _normalize_entry_envelope(value: Mapping[str, Any]) -> dict[str, Any]:
     if value["contract_version"] != PACK_ENTRY_CONTRACT:
         raise PackError("entry envelope contract is unsupported")
     entry = normalize_entry(value["entry"])
+    try:
+        validate_entry_quality(entry)
+    except EntryQualityError as exc:
+        raise PackError(str(exc)) from exc
     digest = sha256_digest(entry)
     version_id = stable_id(
         "entryv", {"entry_id": entry["entry_id"], "entry_digest": digest}

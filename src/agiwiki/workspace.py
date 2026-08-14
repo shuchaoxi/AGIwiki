@@ -20,6 +20,7 @@ from .contracts import (
     sha256_digest,
 )
 from .codec import JSONDocumentError, write_json_new
+from .quality import EntryQualityError, validate_entries_quality
 
 
 WORKSPACE_MANIFEST = "agiwiki.json"
@@ -171,9 +172,17 @@ def load_workspace(path: str | os.PathLike[str]) -> Workspace:
 
 
 def validate_workspace(path: str | os.PathLike[str]) -> Workspace:
-    """Validate without creating, repairing, indexing, or changing the Workspace."""
+    """Validate structure and minimum information completeness without writing."""
 
-    return load_workspace(path)
+    workspace = load_workspace(path)
+    try:
+        validate_entries_quality(
+            workspace.entries,
+            source_paths=workspace.entry_paths,
+        )
+    except EntryQualityError as exc:
+        raise WorkspaceError(str(exc)) from exc
+    return workspace
 
 
 def initialize_workspace(

@@ -40,6 +40,38 @@ def test_index_is_external_rebuildable_and_searches_pack(tmp_path: Path) -> None
     short = find_memory(pack, cache, "光")
     assert short["count"] == 1
 
+    natural = find_memory(pack, cache, "请问如何创建并检查非序列矩形光源的结果")
+    assert natural["count"] == 1
+    assert natural["results"][0]["entry_id"] == ENTRY_ID
+
+    english = find_memory(pack, cache, "how to verify a zemax source safely")
+    assert english["count"] == 1
+    assert english["results"][0]["entry_id"] == ENTRY_ID
+
+
+def test_natural_language_fallback_ranks_the_specific_entry_first(
+    tmp_path: Path,
+) -> None:
+    pack = tmp_path / "pack"
+    cache = tmp_path / "search.sqlite"
+    report = entry(
+        entry_id="entry_" + "7" * 32,
+        title="导出 Zemax 分析报告",
+    )
+    report["summary"] = "把已经完成的分析结果导出为独立报告，并重新打开文件检查内容完整性。"
+    report["content"]["goal"] = "将当前分析结果写入一个新报告文件，同时保留原始工程和已有输出。"
+    report["content"]["steps"][0]["action"] = "选择报告导出功能，并指定一个尚不存在的新文件作为目标。"
+    report["content"]["steps"][0]["expected_result"] = "目标位置出现新的报告文件，原始工程文件保持不变。"
+    report["content"]["steps"][0]["verification"] = "重新打开导出的报告，并核对标题、分析参数和结果段落。"
+    report["keywords"] = ["zemax", "分析报告", "导出"]
+    build_pack(workspace(), [source()], [entry(), report], pack)
+    build_index(pack, cache)
+
+    result = find_memory(pack, cache, "请问如何创建并检查非序列矩形光源的结果")
+
+    assert result["count"] == 2
+    assert result["results"][0]["entry_id"] == ENTRY_ID
+
 
 def test_index_exact_replay_and_conflicting_pack_does_not_clobber(
     tmp_path: Path,

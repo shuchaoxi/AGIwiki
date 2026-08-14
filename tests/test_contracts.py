@@ -136,6 +136,15 @@ def test_portable_entry_rejects_private_absolute_paths(private_path: str) -> Non
         normalize_entry(entry)
 
 
+def test_portable_entry_does_not_misclassify_uri_scheme_as_windows_drive() -> None:
+    entry = _read("entries/fact-ensure-ascii.json")
+    entry["summary"] = (
+        "The local stdio resource agiwiki://catalog lists activated memory packs."
+    )
+
+    assert normalize_entry(entry)["summary"] == entry["summary"]
+
+
 def test_procedure_requires_verification_failure_guidance_and_warnings() -> None:
     entry = _read("entries/procedure-write-json.json")
     del entry["content"]["steps"][0]["failure_guidance"]

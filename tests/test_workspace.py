@@ -96,6 +96,22 @@ def test_minimal_workspace_loads_and_locates_editable_entry() -> None:
     assert workspace.workspace_digest.startswith("sha256:")
 
 
+def test_validate_rejects_structurally_valid_but_information_poor_entry(
+    tmp_path: Path,
+) -> None:
+    root = _copy_example(tmp_path)
+    fact_path = root / "entries" / "fact-ensure-ascii.json"
+    fact = _load(fact_path)
+    fact["summary"] = "." * 64
+    fact["content"]["statement"] = "." * 64
+    fact["keywords"] = ["x", "y"]
+    _write(fact_path, fact)
+
+    assert load_workspace(root).entry(FACT_ID)["summary"] == "." * 64
+    with pytest.raises(WorkspaceError, match="too brief at /summary"):
+        validate_workspace(root)
+
+
 def test_validate_is_read_only_and_portable_projection_contains_no_local_paths(
     tmp_path: Path,
 ) -> None:

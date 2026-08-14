@@ -50,16 +50,16 @@ def entry(
         "entry_id": entry_id,
         "kind": "procedure",
         "title": title,
-        "summary": "创建光源并验证设置。",
+        "summary": "在 Zemax 非序列模式中创建矩形光源，并验证对象类型、功率和追迹结果。",
         "content": {
-            "goal": "建立一个非序列光源。",
+            "goal": "在现有非序列系统中新增一个参数明确、能够参与光线追迹的矩形光源。",
             "prerequisites": ["打开非序列模式。"],
             "steps": [
                 {
                     "step_id": "step_create",
                     "action": "插入 Source Rectangle。",
-                    "expected_result": "对象列表出现光源。",
-                    "verification": "检查对象类型和功率。",
+                    "expected_result": "对象列表出现矩形光源，且输入的关键参数已经保存。",
+                    "verification": "重新读取对象类型和功率参数，并运行追迹确认光源产生有效光线。",
                     "failure_guidance": ["确认当前系统模式。"],
                     "warnings": ["不要覆盖已有对象。"],
                 }
@@ -79,6 +79,16 @@ def entry(
             }
         ],
     }
+
+
+def test_pack_build_rejects_information_poor_entry(tmp_path: Path) -> None:
+    poor = entry()
+    poor["summary"] = "x"
+    poor["content"]["goal"] = "x"
+    poor["keywords"] = ["x"]
+
+    with pytest.raises(PackError, match="too brief at /summary"):
+        build_pack(workspace(), [source()], [poor], tmp_path / "poor-pack")
 
 
 def test_codec_is_deterministic_and_loader_rejects_unsafe_json(tmp_path: Path) -> None:

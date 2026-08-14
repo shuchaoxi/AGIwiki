@@ -63,7 +63,7 @@ _PRIVATE_POSIX_PATH = re.compile(
     r"(?<![A-Za-z0-9:])/(?:home|Users|root|tmp|private|var/tmp)/[^\s\"']+"
 )
 _WINDOWS_ABSOLUTE_PATH = re.compile(
-    r"(?i)(?:[A-Z]:[\\/][^\s\"']+|\\\\[^\\\s]+\\[^\\\s]+)"
+    r"(?i)(?:(?<![A-Za-z0-9])[A-Z]:[\\/][^\s\"']+|\\\\[^\\\s]+\\[^\\\s]+)"
 )
 
 

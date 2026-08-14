@@ -17,6 +17,14 @@ agiwiki workspace init TARGET --slug SLUG --title TITLE --locale zh-CN
 The command is no-clobber and creates private `sources/` and `entries/` directories. The
 Workspace becomes complete only after it contains at least one valid Source and Entry.
 
+`workspace validate` also applies `agiwiki.entry-quality.v1`. This is a deliberately small
+information-completeness gate: summaries, fact statements, definitions, goals, diagnostic
+signals, actions, and verification text must contain enough letters or numbers to be usable,
+and every Entry needs at least two retrieval keywords. Only letters and numbers count
+toward the minimum, so punctuation padding is rejected. It blocks one-word placeholders
+but does not claim to prove truth. Accuracy still depends on inspecting the exact Source edition,
+digest, and locator and preserving uncertainty during authoring.
+
 `agiwiki.json` identifies one editable knowledge collection and its release
 version. Filenames do not determine identity.
 

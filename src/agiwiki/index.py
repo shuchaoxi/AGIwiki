@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 import stat
 import tempfile
@@ -19,6 +20,7 @@ from .pack import PackError, iter_entries, verify_pack
 INDEX_CONTRACT = "agiwiki.memory-index.v1"
 TOKENIZER_TRIGRAM = "trigram"
 TOKENIZER_FALLBACK = "unicode61"
+_QUERY_PART = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.:+-]*|[\u3400-\u9fff]+")
 
 
 class IndexError(ValueError):
@@ -134,6 +136,7 @@ def find_memory(
     with _database_snapshot(target) as snapshot:
         with _readonly_database(snapshot) as connection:
             metadata = _verify_connection(connection, manifest, entries)
+            fallback_ranked = False
             try:
                 if metadata["tokenizer"] == TOKENIZER_TRIGRAM and len(normalized) < 3:
                     escaped = (
@@ -161,6 +164,9 @@ def find_memory(
                         """,
                         (phrase, limit),
                     ).fetchall()
+                if not rows:
+                    rows = _fallback_search(connection, normalized, limit=limit)
+                    fallback_ranked = True
             except sqlite3.Error as exc:
                 raise IndexError("search query failed") from exc
     return {
@@ -177,7 +183,7 @@ def find_memory(
                 "title": row[2],
                 "summary": row[3],
                 "kind": row[4],
-                "score": float(row[5]),
+                "score": float(-row[5] if fallback_ranked else row[5]),
             }
             for row in rows
         ],
@@ -352,6 +358,60 @@ def _query(value: Any) -> str:
     if not normalized or len(normalized) > 1000 or "\x00" in normalized:
         raise IndexError("query must contain 1 to 1000 safe characters")
     return normalized
+
+
+def _fallback_search(
+    connection: sqlite3.Connection,
+    query: str,
+    *,
+    limit: int,
+) -> list[tuple[Any, ...]]:
+    """Recall partial natural-language matches after exact FTS phrase failure."""
+
+    terms = _fallback_terms(query)
+    score_parts: list[str] = []
+    score_parameters: list[str] = []
+    where_parts: list[str] = []
+    where_parameters: list[str] = []
+    for term in terms:
+        escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+        score_parts.append(
+            "(CASE WHEN title LIKE ? ESCAPE '\\' THEN 8 ELSE 0 END + "
+            "CASE WHEN summary LIKE ? ESCAPE '\\' THEN 4 ELSE 0 END + "
+            "CASE WHEN search_text LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END)"
+        )
+        score_parameters.extend((pattern, pattern, pattern))
+        where_parts.append("search_text LIKE ? ESCAPE '\\'")
+        where_parameters.append(pattern)
+    statement = f"""
+        SELECT entry_version_id,entry_id,title,summary,kind,
+               ({' + '.join(score_parts)}) AS relevance
+        FROM entry_fts
+        WHERE {' OR '.join(where_parts)}
+        ORDER BY relevance DESC,entry_id
+        LIMIT ?
+    """
+    return connection.execute(
+        statement,
+        (*score_parameters, *where_parameters, limit),
+    ).fetchall()
+
+
+def _fallback_terms(query: str) -> tuple[str, ...]:
+    terms: list[str] = []
+    for match in _QUERY_PART.finditer(query):
+        value = match.group(0)
+        if "\u3400" <= value[0] <= "\u9fff":
+            if len(value) <= 3:
+                terms.append(value)
+            else:
+                terms.append(value)
+                terms.extend(value[index : index + 2] for index in range(len(value) - 1))
+        elif len(value) >= 2:
+            terms.append(value.casefold())
+    unique = tuple(dict.fromkeys(terms))[:32]
+    return unique or (query,)
 
 
 def _safe_index_target(path: str | os.PathLike[str]) -> Path:
