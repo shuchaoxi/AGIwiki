@@ -14,7 +14,7 @@ from .mcp import main as mcp_main
 from .pack import build_workspace_pack, verify_pack
 from .paths import resolve_home_paths
 from .runtime import MemoryRuntime
-from .workspace import validate_workspace
+from .workspace import initialize_workspace, validate_workspace
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -41,6 +41,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _dispatch(args: argparse.Namespace) -> Any:
+    if args.area == "workspace" and args.action == "init":
+        manifest = initialize_workspace(
+            args.path,
+            slug=args.slug,
+            title=args.title,
+            default_locale=args.locale,
+            version=args.version,
+        )
+        return {
+            "ok": True,
+            "workspace_id": manifest["workspace_id"],
+            "slug": manifest["slug"],
+            "version": manifest["version"],
+        }
     if args.area == "workspace" and args.action == "validate":
         workspace = validate_workspace(args.path)
         return {
@@ -108,8 +122,16 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--home", help="override the private AGIWiki Home")
     areas = parser.add_subparsers(dest="area", required=True)
 
-    workspace = areas.add_parser("workspace", help="validate editable Workspace JSON")
+    workspace = areas.add_parser("workspace", help="create or validate a Workspace")
     workspace_actions = workspace.add_subparsers(dest="action", required=True)
+    initialize = workspace_actions.add_parser(
+        "init", help="create an empty authoring Workspace"
+    )
+    initialize.add_argument("path")
+    initialize.add_argument("--slug", required=True)
+    initialize.add_argument("--title", required=True)
+    initialize.add_argument("--locale", default="zh-CN")
+    initialize.add_argument("--version", default="0.1.0")
     validate = workspace_actions.add_parser("validate", help="validate one Workspace")
     validate.add_argument("path")
 

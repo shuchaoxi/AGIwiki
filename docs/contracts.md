@@ -8,6 +8,15 @@ locations and secrets.
 
 ## Workspace
 
+Create an empty authoring tree with:
+
+```bash
+agiwiki workspace init TARGET --slug SLUG --title TITLE --locale zh-CN
+```
+
+The command is no-clobber and creates private `sources/` and `entries/` directories. The
+Workspace becomes complete only after it contains at least one valid Source and Entry.
+
 `agiwiki.json` identifies one editable knowledge collection and its release
 version. Filenames do not determine identity.
 

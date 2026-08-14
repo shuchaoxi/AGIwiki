@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import secrets
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
@@ -18,7 +19,7 @@ from .contracts import (
     normalize_workspace,
     sha256_digest,
 )
-from .codec import JSONDocumentError
+from .codec import JSONDocumentError, write_json_new
 
 
 WORKSPACE_MANIFEST = "agiwiki.json"
@@ -175,6 +176,59 @@ def validate_workspace(path: str | os.PathLike[str]) -> Workspace:
     return load_workspace(path)
 
 
+def initialize_workspace(
+    path: str | os.PathLike[str],
+    *,
+    slug: str,
+    title: str,
+    default_locale: str = "zh-CN",
+    version: str = "0.1.0",
+    workspace_id: str | None = None,
+) -> dict[str, Any]:
+    """Create one private, empty authoring Workspace without overwriting files.
+
+    An initialized Workspace intentionally does not validate as a complete memory
+    source until at least one Source and one Entry have been authored.
+    """
+
+    try:
+        manifest = normalize_workspace(
+            {
+                "contract_version": "agiwiki.workspace.v1",
+                "workspace_id": workspace_id or f"ws_{secrets.token_hex(16)}",
+                "slug": slug,
+                "version": version,
+                "title": title,
+                "default_locale": default_locale,
+            }
+        )
+    except ContractError as exc:
+        raise WorkspaceError(str(exc)) from exc
+    candidate = Path(path)
+    if ".." in candidate.parts:
+        raise WorkspaceError("Workspace path must not contain parent traversal")
+    root = candidate.absolute()
+    _reject_symlink_components(root.parent)
+    if root.exists() or root.is_symlink():
+        raise WorkspaceError("Workspace target already exists")
+    if not root.parent.is_dir():
+        raise WorkspaceError("Workspace parent must be an existing directory")
+    try:
+        root.mkdir(mode=0o700)
+        os.chmod(root, 0o700)
+        for directory in (root / "sources", root / "entries"):
+            directory.mkdir(mode=0o700)
+            os.chmod(directory, 0o700)
+        manifest_path = root / WORKSPACE_MANIFEST
+        write_json_new(manifest_path, manifest)
+        os.chmod(manifest_path, 0o600)
+    except OSError as exc:
+        raise WorkspaceError(
+            "Workspace initialization failed; inspect the new target before retrying"
+        ) from exc
+    return deepcopy(manifest)
+
+
 def workspace_digest(
     manifest: Mapping[str, Any],
     sources: Sequence[Mapping[str, Any]],
@@ -297,6 +351,7 @@ __all__ = [
     "WORKSPACE_MANIFEST",
     "Workspace",
     "WorkspaceError",
+    "initialize_workspace",
     "load_workspace",
     "validate_workspace",
     "workspace_digest",

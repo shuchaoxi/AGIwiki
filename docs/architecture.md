@@ -26,6 +26,9 @@ The Workspace is the only user-editable layer. It contains `agiwiki.json`,
 authorized PDFs, manuals, web exports, code, and notes and write these JSON
 files. AGIWiki itself does not call a model.
 
+资料编译由独立的 `agiwiki-author-memory` Skill 指导，核心运行时不调用模型。Skill 只写
+可编辑 Workspace；Pack 的构建、安装与激活仍是显式的本地操作。
+
 ## Memory Pack
 
 A Pack contains only canonical, portable JSON. It excludes timestamps,

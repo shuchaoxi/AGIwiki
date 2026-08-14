@@ -15,6 +15,22 @@ EXAMPLE = Path(__file__).parents[1] / "examples" / "minimal-memory"
 def test_cli_validates_builds_and_initializes_without_network(
     tmp_path: Path, capsys
 ) -> None:
+    authored = tmp_path / "authored"
+    assert main(
+        [
+            "workspace",
+            "init",
+            str(authored),
+            "--slug",
+            "authored",
+            "--title",
+            "Authored Memory",
+        ]
+    ) == 0
+    initialized = json.loads(capsys.readouterr().out)
+    assert initialized["workspace_id"].startswith("ws_")
+    assert (authored / "sources").is_dir()
+
     assert main(["workspace", "validate", str(EXAMPLE)]) == 0
     validated = json.loads(capsys.readouterr().out)
     assert validated["entry_count"] == 4

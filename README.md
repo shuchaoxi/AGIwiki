@@ -2,8 +2,9 @@
 
 > AGI 时代的个人 Wiki：把你的资料整理成多个 Agent 都能调用的事实记忆。
 
-AGIWiki 是一个开源、本地优先、面向个人的事实记忆工具。用户选择的 Agent 阅读
-PDF、手册、网页导出、代码和笔记，将知识写入普通 JSON Workspace；AGIWiki 负责机械校验、
+AGIWiki 是一个开源、本地优先、面向个人的事实记忆工具。用户选择的 Agent 可通过
+`agiwiki-author-memory` Skill 阅读 PDF、手册、网页导出、代码和笔记，将知识写入普通
+JSON Workspace；AGIWiki 负责机械校验、
 构建不可变 Memory Pack、安装到个人 Home、建立可重建的本地索引，并通过 CLI 或 stdio
 MCP 提供给其他 Agent。
 
@@ -61,7 +62,11 @@ python3.12 -m venv .venv
 随后运行：
 
 ```bash
-# 1. 校验人或 Agent 编写的 JSON Workspace
+# 0. 初始化自己的空 Workspace（不会覆盖现有目录）
+agiwiki workspace init ./my-memory \
+  --slug my-memory --title "我的事实记忆" --locale zh-CN
+
+# 1. 校验人或 Agent 编写的 JSON Workspace；示例已经包含可校验内容
 agiwiki workspace validate examples/minimal-memory
 
 # 2. 构建纯 JSON、不可变的 Memory Pack
@@ -100,7 +105,9 @@ MCP 只有一个资源和两个只读工具：
 - `get_memory`
 
 构建、安装和激活不会暴露给 Agent。可复制
-[`skills/agiwiki-memory`](skills/agiwiki-memory/SKILL.md) 作为 Agent 的使用说明。
+[`skills/agiwiki-memory`](skills/agiwiki-memory/SKILL.md) 作为 Agent 的只读使用说明；
+复制 [`skills/agiwiki-author-memory`](skills/agiwiki-author-memory/SKILL.md) 可让具备本地
+文件权限的 Agent 把用户明确选定的资料编译成 Workspace。作者 Skill 不会进入只读 MCP。
 
 ## 数据模型
 

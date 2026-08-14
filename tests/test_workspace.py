@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
 
@@ -8,6 +9,7 @@ import pytest
 
 from agiwiki.workspace import (
     WorkspaceError,
+    initialize_workspace,
     load_workspace,
     validate_workspace,
     workspace_digest,
@@ -35,6 +37,51 @@ def _write(path: Path, value: dict) -> None:
         json.dumps(value, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def test_initialize_workspace_creates_private_empty_authoring_tree(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "research-memory"
+
+    manifest = initialize_workspace(
+        root,
+        slug="research-memory",
+        title="研究事实记忆",
+    )
+
+    assert manifest["workspace_id"].startswith("ws_")
+    assert json.loads((root / "agiwiki.json").read_text(encoding="utf-8")) == manifest
+    assert (root / "sources").is_dir()
+    assert (root / "entries").is_dir()
+    assert os.stat(root).st_mode & 0o077 == 0
+    assert os.stat(root / "agiwiki.json").st_mode & 0o077 == 0
+    with pytest.raises(WorkspaceError, match="at least one Source"):
+        validate_workspace(root)
+
+
+def test_initialize_workspace_is_no_clobber_and_rejects_symlink_parent(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "memory"
+    root.mkdir()
+    sentinel = root / "keep.txt"
+    sentinel.write_text("keep", encoding="utf-8")
+    with pytest.raises(WorkspaceError, match="already exists"):
+        initialize_workspace(root, slug="memory", title="Memory")
+    assert sentinel.read_text(encoding="utf-8") == "keep"
+
+    real = tmp_path / "real"
+    real.mkdir()
+    linked = tmp_path / "linked"
+    linked.symlink_to(real, target_is_directory=True)
+    with pytest.raises(WorkspaceError, match="symlink"):
+        initialize_workspace(linked / "child", slug="child", title="Child")
+
+    invalid = tmp_path / "invalid"
+    with pytest.raises(WorkspaceError, match="workspace invalid"):
+        initialize_workspace(invalid, slug="Not A Slug", title="Invalid")
+    assert not invalid.exists()
 
 
 def test_minimal_workspace_loads_and_locates_editable_entry() -> None:

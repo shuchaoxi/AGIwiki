@@ -1,0 +1,4 @@
+interface:
+  display_name: "AGIWiki Author Memory"
+  short_description: "Compile authorized documents into factual memory"
+  default_prompt: "Use $agiwiki-author-memory to turn my selected documents into a validated AGIWiki Workspace."
