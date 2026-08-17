@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agiwiki"
-version = "0.1.0"
-description = "Local-first personal factual memory for AI agents"
+version = "0.1.0a1"
+description = "Experimental reference implementation for portable agent knowledge packs"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.28.1,<2"]
+devloop = ["langgraph>=1.0,<2"]
 dev = [
   "build>=1.2,<2",
   "pip-audit>=2.9,<3",
@@ -52,6 +53,36 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 agiwiki = ["schemas/*.json"]
+
+# Keep the repository-level `skills/` directories as the single source of
+# truth. Wheels install the same files below the interpreter's data prefix;
+# `agiwiki integration skill-path` discovers either this installed copy or an
+# editable source checkout without modifying an Agent configuration.
+[tool.setuptools.data-files]
+"share/agiwiki/skills/agiwiki-memory" = [
+  "skills/agiwiki-memory/SKILL.md",
+]
+"share/agiwiki/skills/agiwiki-memory/agents" = [
+  "skills/agiwiki-memory/agents/openai.yaml",
+]
+"share/agiwiki/skills/agiwiki-author-memory" = [
+  "skills/agiwiki-author-memory/SKILL.md",
+]
+"share/agiwiki/skills/agiwiki-author-memory/agents" = [
+  "skills/agiwiki-author-memory/agents/openai.yaml",
+]
+"share/agiwiki/skills/agiwiki-author-memory/references" = [
+  "skills/agiwiki-author-memory/references/authoring-contract.md",
+]
+"share/agiwiki/skills/agiwiki-critical-review" = [
+  "skills/agiwiki-critical-review/SKILL.md",
+]
+"share/agiwiki/skills/agiwiki-critical-review/agents" = [
+  "skills/agiwiki-critical-review/agents/openai.yaml",
+]
+"share/agiwiki/skills/agiwiki-critical-review/references" = [
+  "skills/agiwiki-critical-review/references/review-contract.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

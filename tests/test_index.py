@@ -79,7 +79,7 @@ def test_natural_language_fallback_ranks_the_specific_entry_first(
 
     result = find_memory(pack, cache, "请问如何创建并检查非序列矩形光源的结果")
 
-    assert result["count"] == 2
+    assert result["count"] == 1
     assert result["results"][0]["entry_id"] == ENTRY_ID
 
 
@@ -109,6 +109,24 @@ def test_fallback_does_not_recall_entries_from_question_stopwords(
 
     assert specific["results"][0]["entry_id"] == ENTRY_ID
     assert generic["count"] == 0
+
+
+def test_fallback_requires_one_entry_to_cover_most_informative_terms(
+    tmp_path: Path,
+) -> None:
+    pack = tmp_path / "pack"
+    cache = tmp_path / "search.sqlite"
+    database = entry(title="HTTP database backup procedure")
+    database["summary"] = "Back up an HTTP service database and verify recovery."
+    database["keywords"] = ["http", "database", "backup"]
+    build_pack(workspace(), [source()], [database], pack)
+    build_index(pack, cache)
+
+    relevant = find_memory(pack, cache, "verify HTTP database backup recovery")
+    outside_scope = find_memory(pack, cache, "HTTP quantum teleportation protocol")
+
+    assert relevant["results"][0]["entry_id"] == ENTRY_ID
+    assert outside_scope["count"] == 0
 
 
 def test_index_exact_replay_and_conflicting_pack_does_not_clobber(

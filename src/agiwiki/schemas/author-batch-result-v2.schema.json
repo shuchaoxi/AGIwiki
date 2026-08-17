@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/author-batch-result.v2.json",
+  "title": "AGIWiki sealed authoring batch result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "plan_id",
+    "batch_id",
+    "outcome",
+    "measurement_source",
+    "input_tokens",
+    "output_tokens",
+    "entry_bindings",
+    "result_digest"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.author-batch-result.v2"},
+    "plan_id": {"type": "string", "pattern": "^authorplan_[a-f0-9]{32}$"},
+    "batch_id": {"type": "string", "pattern": "^authorbatch_[a-f0-9]{32}$"},
+    "outcome": {"enum": ["completed", "skipped"]},
+    "measurement_source": {"enum": ["provider", "agent", "unavailable"]},
+    "input_tokens": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+    "output_tokens": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+    "entry_bindings": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry_id", "entry_digest"],
+        "properties": {
+          "entry_id": {"type": "string", "pattern": "^entry_[a-f0-9]{32}$"},
+          "entry_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "result_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"outcome": {"const": "completed"}}},
+      "then": {"properties": {"entry_bindings": {"minItems": 1}}}
+    },
+    {
+      "if": {"properties": {"outcome": {"const": "skipped"}}},
+      "then": {"properties": {"entry_bindings": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"measurement_source": {"const": "unavailable"}}},
+      "then": {
+        "properties": {
+          "input_tokens": {"const": 0},
+          "output_tokens": {"const": 0}
+        }
+      }
+    }
+  ]
+}

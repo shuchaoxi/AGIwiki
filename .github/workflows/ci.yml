@@ -63,22 +63,119 @@ jobs:
               assert any(name.endswith("/NOTICE") for name in names)
               assert any(name.endswith("/ORIGIN.md") for name in names)
               assert "agiwiki/schemas/memory-pack.schema.json" in names
+              assert "agiwiki/schemas/adaptive-write.schema.json" in names
+              assert "agiwiki/schemas/adaptive-correction.schema.json" in names
+              assert "agiwiki/schemas/adaptive-record.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-proposal.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-decision.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-decision-receipt.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-decision-receipt-v2.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-application.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-application-receipt.schema.json" in names
+              assert "agiwiki/schemas/adaptive-review-due.schema.json" in names
+              assert "agiwiki/adaptive.py" in names
+              assert "agiwiki/adaptive_contracts.py" in names
+              assert "agiwiki/authoring.py" in names
+              assert "agiwiki/authoring_contracts.py" in names
+              assert "agiwiki/integration.py" in names
+              assert "agiwiki/schemas/author-plan.schema.json" in names
+              assert "agiwiki/schemas/author-plan-v2.schema.json" in names
+              assert "agiwiki/schemas/author-claim.schema.json" in names
+              assert "agiwiki/schemas/author-batch-result.schema.json" in names
+              assert "agiwiki/schemas/author-batch-result-v2.schema.json" in names
+              assert "agiwiki/schemas/author-amendment.schema.json" in names
+              assert "agiwiki/schemas/author-budget-extension.schema.json" in names
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-memory/SKILL.md") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-memory/agents/openai.yaml") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-author-memory/SKILL.md") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-author-memory/agents/openai.yaml") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-author-memory/references/authoring-contract.md") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-critical-review/SKILL.md") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-critical-review/agents/openai.yaml") for name in names)
+              assert any(name.endswith(".data/data/share/agiwiki/skills/agiwiki-critical-review/references/review-contract.md") for name in names)
+              assert not any("agiwiki_devloop" in name for name in names)
+              assert not any("evaluate_frozen_retrieval.py" in name for name in names)
+              assert not any("evaluation_contracts.py" in name for name in names)
+              assert not any("integrations/deepseek-harness" in name for name in names)
           with tarfile.open(sdist) as archive:
               names = set(archive.getnames())
+              assert any(name.endswith("/PROJECT_RETROSPECTIVE.md") for name in names)
               assert any(name.endswith("/skills/agiwiki-memory/SKILL.md") for name in names)
               assert any(name.endswith("/skills/agiwiki-author-memory/SKILL.md") for name in names)
+              assert any(name.endswith("/skills/agiwiki-critical-review/SKILL.md") for name in names)
               assert any(name.endswith("/examples/minimal-memory/agiwiki.json") for name in names)
+              assert any(name.endswith("/tools/agiwiki_devloop/graph.py") for name in names)
+              assert any(name.endswith("/tools/evaluate_retrieval.py") for name in names)
+              assert any(name.endswith("/tools/evaluate_fragment_retrieval.py") for name in names)
+              assert any(name.endswith("/tools/evaluate_frozen_retrieval.py") for name in names)
+              assert any(name.endswith("/tools/evaluation_contracts.py") for name in names)
+              assert any(name.endswith("/docs/evaluations/frozen-external-retrieval.md") for name in names)
+              assert any(name.endswith("/docs/evaluations/rfc9112-retrieval-task-bank.json") for name in names)
+              assert any(name.endswith("/docs/evaluations/rfc9112-fragment-evidence.json") for name in names)
+              assert any(name.endswith("/integrations/deepseek-harness/README.md") for name in names)
+              assert any(name.endswith("/integrations/deepseek-harness/agiwiki.cordis.yml") for name in names)
+              assert any(name.endswith("/integrations/deepseek-harness/COMPATIBILITY.json") for name in names)
           PY
       - name: Installed wheel smoke test
         run: |
           python -m venv /tmp/agiwiki-wheel
           /tmp/agiwiki-wheel/bin/python -m pip install dist/*.whl
           /tmp/agiwiki-wheel/bin/agiwiki --version
+          /tmp/agiwiki-wheel/bin/agiwiki author --help
+          /tmp/agiwiki-wheel/bin/python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+
+          executable = "/tmp/agiwiki-wheel/bin/agiwiki"
+          for capability in ("read", "author", "review"):
+              output = subprocess.check_output(
+                  [
+                      executable,
+                      "integration",
+                      "skill-path",
+                      "--capability",
+                      capability,
+                  ],
+                  text=True,
+              )
+              result = json.loads(output)
+              assert result["available"] is True
+              assert pathlib.Path(result["entrypoint"]).is_file()
+              assert all(
+                  (pathlib.Path(result["path"]) / relative).is_file()
+                  for relative in result["required_files"]
+              )
+          PY
+          /tmp/agiwiki-wheel/bin/agiwiki integration render --client codex --distro Ubuntu
           /tmp/agiwiki-wheel/bin/agiwiki workspace validate examples/minimal-memory
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home home init
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive init
+          printf '%s\n' '{"contract_version":"agiwiki.adaptive-write.v1","memory_class":"profile","scope":{"type":"user","key":"ci-smoke"},"content":"用户偏好中文回答。","provenance":{"type":"explicit_user"}}' | /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive remember --input - --operation-id op_11111111111111111111111111111111
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive search 中文 --scope-type user --scope-key ci-smoke
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive review-plan --scope-type user --scope-key ci-smoke
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive principal-create --permissions review_propose --credential-output /tmp/agiwiki-review-proposer.json --confirm
+          /tmp/agiwiki-wheel/bin/agiwiki --home /tmp/agiwiki-smoke-home adaptive review-create --scope-type user --scope-key ci-smoke --credential-file /tmp/agiwiki-review-proposer.json
+          cd /tmp
+          /tmp/agiwiki-wheel/bin/python "$GITHUB_WORKSPACE/tests/test_consumer_lifecycle.py"
       - name: Real MCP import smoke test
         run: python -c "from agiwiki.mcp import build_mcp_server; build_mcp_server()"
       - name: Real MCP stdio protocol test
         run: python -m pytest -q tests/test_cli_mcp.py -k real_mcp_stdio_round_trip
+
+  devloop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade 'pip>=26.1.2'
+      - run: python -m pip install -e '.[dev,devloop]'
+      - run: env PYTHONPATH=tools python -m pytest -q tools/agiwiki_devloop/tests
 
   secrets:
     runs-on: ubuntu-latest

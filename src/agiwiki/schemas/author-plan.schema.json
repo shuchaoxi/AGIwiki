@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/author-plan.v1.json",
+  "title": "AGIWiki immutable authoring plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "plan_id",
+    "workspace_id",
+    "source",
+    "policy",
+    "batches",
+    "plan_digest"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.author-plan.v1"},
+    "plan_id": {"type": "string", "pattern": "^authorplan_[a-f0-9]{32}$"},
+    "workspace_id": {"type": "string", "pattern": "^ws_[a-f0-9]{32}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "local_path",
+        "content_digest",
+        "size_bytes",
+        "kind",
+        "title",
+        "edition",
+        "language",
+        "unit_type",
+        "unit_count"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^src_[a-f0-9]{32}$"},
+        "local_path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "content_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824},
+        "kind": {"enum": ["pdf", "web", "manual", "code", "note", "other"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 512},
+        "edition": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+        "language": {"type": ["string", "null"], "minLength": 1, "maxLength": 64},
+        "unit_type": {"enum": ["page", "line", "file"]},
+        "unit_count": {"type": "integer", "minimum": 1, "maximum": 10000000}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prompt_set_id",
+        "batch_size",
+        "initial_budget_tokens",
+        "max_entries",
+        "tokens_per_unit"
+      ],
+      "properties": {
+        "prompt_set_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9._-]{2,127}$"
+        },
+        "batch_size": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "initial_budget_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 256,
+          "maximum": 1000000000
+        },
+        "max_entries": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "tokens_per_unit": {"type": "integer", "minimum": 1, "maximum": 1000000}
+      }
+    },
+    "batches": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/batch"}
+    },
+    "plan_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "batch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batch_id",
+        "ordinal",
+        "locator",
+        "estimated_input_tokens"
+      ],
+      "properties": {
+        "batch_id": {"type": "string", "pattern": "^authorbatch_[a-f0-9]{32}$"},
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "locator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "start", "end"],
+          "properties": {
+            "type": {"enum": ["page", "line_range", "file"]},
+            "start": {"type": "integer", "minimum": 1, "maximum": 10000000},
+            "end": {"type": "integer", "minimum": 1, "maximum": 10000000}
+          }
+        },
+        "estimated_input_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        }
+      }
+    }
+  }
+}

@@ -2,9 +2,9 @@
   "contract_version": "agiwiki.source.v1",
   "source_id": "src_22222222222222222222222222222222",
   "kind": "note",
-  "title": "AGIWiki JSON 示例证据笔记",
+  "title": "AGIWiki JSON example evidence notes",
   "edition": "example-v1",
-  "content_digest": "sha256:ff8981309b59ed520665df39a244dce4cfff25834c45c6be94a819849c70579e",
+  "content_digest": "sha256:4583c809cbb6c29a5ab0a0a261eff94c578a63bb0edf2b328cca64b98a3f77d4",
   "canonical_uri": "https://github.com/shuchaoxi/AGIwiki/blob/main/examples/minimal-memory/source-material/json-evidence-notes.md",
-  "language": "zh-CN"
+  "language": "en-US"
 }

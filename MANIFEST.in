@@ -1,7 +1,13 @@
-include LICENSE NOTICE ORIGIN.md README.md MIGRATION.md
+include LICENSE NOTICE ORIGIN.md README.md MIGRATION.md PROJECT_RETROSPECTIVE.md
 include CONTRIBUTING.md SECURITY.md CHANGELOG.md
-recursive-include docs *.md
+recursive-include docs *.md *.json
 recursive-include examples *.json *.md *.toml
+recursive-include integrations *.json *.md *.yml
 recursive-include skills *.md *.yaml
 recursive-include tests *.py
+recursive-include tools/agiwiki_devloop *.py *.md
+include tools/evaluate_retrieval.py
+include tools/evaluate_fragment_retrieval.py
+include tools/evaluate_frozen_retrieval.py
+include tools/evaluation_contracts.py
 recursive-include src/agiwiki/schemas *.json

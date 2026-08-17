@@ -1,0 +1,17 @@
+# Default-off AGIWiki integration for DeepSeek Harness.
+# Prerequisite: agiwiki-mcp must be on PATH and the intended AGIWIKI_HOME
+# must already contain an explicitly activated Memory Pack.
+- insert:
+    - id: memory-agiwiki
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: agiwiki
+        transport: stdio
+        command: agiwiki-mcp
+        args: []
+        failOnStartupError: true
+        reconnect:
+          enabled: true
+          initialDelayMs: 500
+          maxDelayMs: 30000
+          maxAttempts: 10

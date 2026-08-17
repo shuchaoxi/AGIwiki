@@ -35,7 +35,7 @@ def _runtime(tmp_path: Path) -> tuple[MemoryRuntime, str, HomeService]:
 def test_find_then_exact_get_returns_portable_source_metadata(tmp_path: Path) -> None:
     runtime, pack_id, _ = _runtime(tmp_path)
 
-    found = runtime.find_memory("规范化 JSON")
+    found = runtime.find_memory("canonical JSON")
     assert found["found"] is True
     assert "query" not in found
     candidate = found["results"][0]
@@ -60,14 +60,14 @@ def test_project_marker_can_only_narrow_global_activation(tmp_path: Path) -> Non
     assert runtime.catalog(project_root=project)["count"] == 1
 
     assert runtime.catalog(workspace_ids=[])["count"] == 0
-    assert runtime.find_memory("规范化 JSON", workspace_ids=[])["found"] is False
+    assert runtime.find_memory("canonical JSON", workspace_ids=[])["found"] is False
 
 
 def test_hot_find_and_exact_get_do_not_repeat_full_pack_verification(
     tmp_path: Path, monkeypatch
 ) -> None:
     runtime, pack_id, home = _runtime(tmp_path)
-    runtime.find_memory("规范化 JSON")  # Build the disposable cache once.
+    runtime.find_memory("canonical JSON")  # Build the disposable cache once.
 
     find_calls = 0
     original = index_module.verify_pack
@@ -78,7 +78,7 @@ def test_hot_find_and_exact_get_do_not_repeat_full_pack_verification(
         return original(path)
 
     monkeypatch.setattr(index_module, "verify_pack", count_find)
-    assert runtime.find_memory("规范化 JSON")["found"] is True
+    assert runtime.find_memory("canonical JSON")["found"] is True
     assert find_calls == 1
 
     get_calls = 0
@@ -100,14 +100,14 @@ def test_hot_find_and_exact_get_do_not_repeat_full_pack_verification(
 
 def test_find_quarantines_a_pack_that_fails_integrity(tmp_path: Path) -> None:
     runtime, pack_id, home = _runtime(tmp_path)
-    runtime.find_memory("规范化 JSON")
+    runtime.find_memory("canonical JSON")
     release = home.registry.get_release(pack_id)
     assert release is not None
     target = next((home.release_path(release) / "entries").glob("*.json"))
     target.write_text("{}", encoding="utf-8")
 
     with pytest.raises(PackError):
-        runtime.find_memory("规范化 JSON")
+        runtime.find_memory("canonical JSON")
     assert home.registry.get_release(pack_id)["health"] == "BROKEN"
     assert home.registry.list_activations() == []
 

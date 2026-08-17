@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-write.schema.json",
+  "title": "AGIWiki Adaptive Memory Write",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "memory_class",
+    "scope",
+    "content",
+    "provenance"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-write.v1"},
+    "memory_class": {"enum": ["profile", "episode"]},
+    "scope": {"$ref": "#/$defs/scope"},
+    "content": {"type": "string", "minLength": 1, "maxLength": 16384},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "sensitivity": {"enum": ["private", "sensitive"]},
+    "retention": {"$ref": "#/$defs/retention"}
+  },
+  "$defs": {
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "key"],
+      "properties": {
+        "type": {"enum": ["user", "agent", "run", "workspace"]},
+        "key": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "explicit_user",
+            "authorized_interaction",
+            "task_result",
+            "import"
+          ]
+        },
+        "digest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "expires_at"],
+      "properties": {
+        "mode": {"enum": ["durable", "expiring"]},
+        "expires_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}

@@ -2,22 +2,22 @@
   "contract_version": "agiwiki.entry.v1",
   "entry_id": "entry_44444444444444444444444444444444",
   "kind": "concept",
-  "title": "规范化 JSON",
-  "summary": "规范化 JSON 用固定的键顺序和编码规则表达同一份 JSON 语义。",
+  "title": "Canonical JSON",
+  "summary": "Canonical JSON uses fixed key ordering and encoding rules to represent the same JSON semantics consistently.",
   "content": {
-    "definition": "规范化 JSON 是按照固定序列化规则生成的 JSON 表示，可用于稳定摘要和内容身份计算。",
+    "definition": "Canonical JSON is a JSON representation produced by deterministic serialization rules for stable digests and content identities.",
     "details": [
-      "对象键按稳定顺序输出。",
-      "序列化规则不依赖文件缩进或对象原始键顺序。"
+      "Object keys are emitted in a stable order.",
+      "Serialization does not depend on file indentation or the object's original key order."
     ],
     "examples": [
-      "键顺序不同但语义相同的两个对象得到相同的规范化表示。"
+      "Objects with equal semantics but different input key order receive the same canonical representation."
     ],
     "misconceptions": [
-      "规范化不会替代 Schema 校验，也不会证明事实正确。"
+      "Canonicalization does not replace Schema validation and does not prove factual correctness."
     ]
   },
-  "keywords": ["digest", "json", "规范化"],
+  "keywords": ["canonical JSON", "digest", "json"],
   "applies_to": ["agiwiki:workspace-v1"],
   "relations": [],
   "source_refs": [
@@ -25,7 +25,7 @@
       "source_id": "src_22222222222222222222222222222222",
       "locator": {
         "type": "section",
-        "value": "规范化 JSON（AGIWiki 约定）"
+        "value": "Canonical JSON under the AGIWiki convention"
       },
       "support_level": "indirect"
     }

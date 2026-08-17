@@ -1,0 +1,36 @@
+{
+  "contract_version": "agiwiki.deepseek-harness-compatibility.v1",
+  "integration_id": "deepseek-harness-stdio-mcp",
+  "status": "experimental",
+  "verified_at": "2026-08-16",
+  "upstream": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "commit": "47f943859bef60e4160492346772ded9b24f765a",
+    "package_version": "0.1.0-rc.5",
+    "license": "MIT",
+    "bridge_package": "@deepseek-ai/dsh-mcp-client"
+  },
+  "agiwiki": {
+    "transport": "stdio",
+    "command": "agiwiki-mcp",
+    "tool_names": [
+      "mcp__agiwiki__find_memory",
+      "mcp__agiwiki__get_memory"
+    ],
+    "resource_names_not_bridged": [
+      "agiwiki://catalog"
+    ],
+    "write_tools_exposed": false
+  },
+  "verification": {
+    "overlay_contract": "CHECKED_AGAINST_PINNED_UPSTREAM_SOURCE",
+    "agiwiki_stdio_protocol": "COVERED_BY_AGIWIKI_CI",
+    "deepseek_harness_runtime_round_trip": "NOT_RUN"
+  },
+  "limitations": [
+    "DeepSeek Harness is in developer preview and may introduce breaking changes.",
+    "The generic bridge exposes MCP tools but not MCP resources or prompts.",
+    "The user must install and configure both products independently.",
+    "This community integration is not an endorsement or support commitment by DeepSeek."
+  ]
+}

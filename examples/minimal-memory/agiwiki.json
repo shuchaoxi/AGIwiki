@@ -3,7 +3,7 @@
   "workspace_id": "ws_11111111111111111111111111111111",
   "slug": "python-json-notes",
   "version": "0.1.0",
-  "title": "Python JSON 个人事实记忆",
-  "description": "一个展示事实、概念、教程和排障词条的最小本地 Workspace。",
-  "default_locale": "zh-CN"
+  "title": "Python JSON factual memory",
+  "description": "A minimal local Workspace demonstrating fact, concept, procedure, and troubleshooting Entries.",
+  "default_locale": "en-US"
 }

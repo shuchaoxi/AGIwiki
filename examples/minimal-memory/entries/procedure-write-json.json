@@ -2,52 +2,52 @@
   "contract_version": "agiwiki.entry.v1",
   "entry_id": "entry_55555555555555555555555555555555",
   "kind": "procedure",
-  "title": "生成可读的 UTF-8 JSON",
-  "summary": "使用明确编码和 ensure_ascii=false 写出包含中文的 JSON 文件。",
+  "title": "Write readable UTF-8 JSON",
+  "summary": "Use an explicit encoding and ensure_ascii=false to write readable JSON containing non-ASCII text.",
   "content": {
-    "goal": "把一个 Python 对象写成可读且保留中文字符的 UTF-8 JSON。",
+    "goal": "Write a Python object as readable UTF-8 JSON while preserving non-ASCII characters.",
     "prerequisites": [
-      "确认目标是用户授权修改的文件。",
-      "保留原文件副本或使用不会覆盖现有文件的写入方式。"
+      "Confirm that the target is authorized for modification.",
+      "Keep the original or use a write method that does not replace an existing file."
     ],
     "steps": [
       {
         "step_id": "step_serialize",
-        "action": "使用 json.dumps(value, ensure_ascii=False, indent=2) 生成文本。",
-        "expected_result": "结果是带缩进并保留中文字符的 JSON 文本。",
-        "verification": "用 json.loads 重新解析生成的文本，并比较解析结果。",
+        "action": "Generate text with json.dumps(value, ensure_ascii=False, indent=2).",
+        "expected_result": "The result is indented JSON text that preserves non-ASCII characters.",
+        "verification": "Parse the generated text with json.loads and compare the parsed value.",
         "failure_guidance": [
-          "若对象包含不可序列化值，先把该值转换为明确的 JSON 类型。"
+          "If the object contains a value that is not JSON serializable, convert it to an explicit JSON type first."
         ],
         "warnings": [
-          "不要在输出中保存密码、访问令牌或私钥。"
+          "Do not store authentication secrets, access tokens, or private keys in the output."
         ]
       },
       {
         "step_id": "step_write",
-        "action": "以 UTF-8 编码把已验证文本写入新文件。",
-        "expected_result": "新文件存在且能以 UTF-8 解码。",
-        "verification": "重新读取文件并用 json.loads 解析。",
+        "action": "Write the validated text to a new file with UTF-8 encoding.",
+        "expected_result": "The new file exists and decodes as UTF-8.",
+        "verification": "Read the file again and parse it with json.loads.",
         "failure_guidance": [
-          "写入失败时保留原文件，不要用不完整输出覆盖它。"
+          "If the write fails, keep the original file and do not replace it with partial output."
         ],
         "warnings": [
-          "写入前确认目标路径没有指向符号链接。"
+          "Before writing, confirm that the target path is not a symbolic link."
         ]
       }
     ],
     "verification": [
-      "重新解析后的对象与输入对象语义相同。",
-      "输出文件可以严格按 UTF-8 解码。"
+      "The reparsed object is semantically equal to the input object.",
+      "The output file decodes strictly as UTF-8."
     ],
     "failure_guidance": [
-      "任何验证失败都应停止替换原文件。"
+      "Any failed verification must stop replacement of the original file."
     ],
     "warnings": [
-      "该流程只描述数据编码，不授权覆盖用户文件。"
+      "This procedure describes data encoding and does not authorize overwriting user files."
     ]
   },
-  "keywords": ["json.dumps", "UTF-8", "教程"],
+  "keywords": ["json.dumps", "procedure", "UTF-8"],
   "applies_to": ["python:3.12"],
   "relations": [
     {
@@ -60,7 +60,7 @@
       "source_id": "src_22222222222222222222222222222222",
       "locator": {
         "type": "section",
-        "value": "AGIWiki 安全写入建议"
+        "value": "Safe JSON writing guidance"
       },
       "support_level": "direct"
     }

@@ -57,7 +57,7 @@ def test_cli_exposes_package_version(capsys) -> None:
     with pytest.raises(SystemExit) as stopped:
         main(["--version"])
     assert stopped.value.code == 0
-    assert capsys.readouterr().out.strip() == "agiwiki 0.1.0"
+    assert capsys.readouterr().out.strip() == "agiwiki 0.1.0a1"
 
 
 def test_mcp_surface_has_exactly_two_read_tools_and_catalog(
@@ -133,7 +133,7 @@ def test_real_mcp_stdio_round_trip(tmp_path: Path) -> None:
             }
 
             result = await asyncio.wait_for(
-                session.call_tool("find_memory", {"query": "规范化 JSON"}),
+                session.call_tool("find_memory", {"query": "canonical JSON"}),
                 timeout=10,
             )
             assert result.isError is False

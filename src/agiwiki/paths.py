@@ -17,6 +17,7 @@ class PathError(ValueError):
 class HomePaths:
     root: Path
     registry_db: Path
+    adaptive_db: Path
     packs_root: Path
     staging_root: Path
     indexes_root: Path
@@ -53,6 +54,7 @@ def resolve_home_paths(
     return HomePaths(
         root=root,
         registry_db=root / "registry.sqlite3",
+        adaptive_db=root / "adaptive.sqlite3",
         packs_root=root / "packs",
         staging_root=root / "staging",
         indexes_root=root / "indexes",

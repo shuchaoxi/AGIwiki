@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-review-decision-receipt.schema.json",
+  "title": "AGIWiki Adaptive Memory Review Decision Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "decision_id",
+    "proposal_id",
+    "proposal_digest",
+    "declared_reviewer",
+    "decided_at",
+    "decisions",
+    "contains_memory_content",
+    "mutations_applied",
+    "replayed"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-review-decision-receipt.v1"},
+    "decision_id": {"type": "string", "pattern": "^decision_[0-9a-f]{32}$"},
+    "proposal_id": {"type": "string", "pattern": "^review_[0-9a-f]{32}$"},
+    "proposal_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "declared_reviewer": {
+      "type": "string",
+      "pattern": "^human:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "decided_at": {"type": "string", "format": "date-time"},
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "decision", "selected_action"],
+        "properties": {
+          "candidate_id": {"type": "string", "pattern": "^candidate_[0-9a-f]{32}$"},
+          "decision": {"enum": ["accepted", "rejected", "deferred"]},
+          "selected_action": {
+            "type": ["string", "null"],
+            "enum": ["forget", "correct", "keep_one", "forget_redundant", null]
+          }
+        }
+      }
+    },
+    "contains_memory_content": {"const": false},
+    "mutations_applied": {"const": false},
+    "replayed": {"type": "boolean"}
+  }
+}

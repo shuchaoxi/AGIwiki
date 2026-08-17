@@ -8,12 +8,16 @@ build/
 dist/
 .coverage
 .DS_Store
+/NUL
 .env
 .env.*
 *.pem
 *.key
 *.p12
 *.pfx
+*.credential.json
+.devloop/
+.agiwiki-author/
 
 # Local personal data and generated artifacts
 .agiwiki/

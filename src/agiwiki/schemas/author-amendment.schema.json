@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/author-amendment.v1.json",
+  "title": "AGIWiki append-only authoring amendment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "amendment_id",
+    "plan_id",
+    "batch_id",
+    "base_result_digest",
+    "entry_id",
+    "operation_id",
+    "sequence",
+    "previous_amendment_id",
+    "old_digest_basis",
+    "old_entry_digest",
+    "new_entry_digest",
+    "amendment_digest"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.author-amendment.v1"},
+    "amendment_id": {"type": "string", "pattern": "^authoramend_[a-f0-9]{32}$"},
+    "plan_id": {"type": "string", "pattern": "^authorplan_[a-f0-9]{32}$"},
+    "batch_id": {"type": "string", "pattern": "^authorbatch_[a-f0-9]{32}$"},
+    "base_result_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "entry_id": {"type": "string", "pattern": "^entry_[a-f0-9]{32}$"},
+    "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$"},
+    "sequence": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "previous_amendment_id": {
+      "type": ["string", "null"],
+      "pattern": "^authoramend_[a-f0-9]{32}$"
+    },
+    "old_digest_basis": {
+      "enum": ["recorded_result", "prior_amendment", "operator_asserted_legacy"]
+    },
+    "old_entry_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "new_entry_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "amendment_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

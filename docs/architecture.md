@@ -1,8 +1,12 @@
 # Architecture
 
-AGIWiki deliberately has four layers and one optional adapter surface:
+AGIWiki 0.1 deliberately has a provider-neutral authoring control plane, four portable/runtime
+layers, and one optional adapter surface:
 
 ```text
+Authorized source -> Authoring Controller -> user-selected Agent/Skill
+                                             |
+                                             v
 Workspace JSON                    editable source
        |
        | validate + deterministic build
@@ -17,6 +21,8 @@ Personal Home                     exact activation + disposable FTS cache
        v                   v
 CLI                       stdio MCP
                           find_memory / get_memory
+
+Explicit adaptive init -> private adaptive.sqlite3 -> operator CLI only
 ```
 
 ## Workspace
@@ -26,8 +32,15 @@ The Workspace is the only user-editable layer. It contains `agiwiki.json`,
 authorized PDFs, manuals, web exports, code, and notes and write these JSON
 files. AGIWiki itself does not call a model.
 
-资料编译由独立的 `agiwiki-author-memory` Skill 指导，核心运行时不调用模型。Skill 只写
-可编辑 Workspace；Pack 的构建、安装与激活仍是显式的本地操作。
+Document compilation follows the separate `agiwiki-author-memory` Skill; the core runtime never
+calls a model. The Skill writes only the editable Workspace. Pack building, installation, and
+activation remain explicit local operations.
+
+For large sources, the local Authoring Controller creates an immutable batch plan, cumulative
+budget, and resumable progress. It coordinates the user's selected agent without bundling a
+provider SDK or storing a copy of source text. Private control state lives in
+`Workspace/.agiwiki-author/` and never enters a Pack. See
+[`authoring-controller.md`](authoring-controller.md).
 
 ## Memory Pack
 
@@ -49,6 +62,14 @@ Home stores verified Pack releases, exact activation state, and rebuildable
 search indexes. Installed Pack files are immutable inputs. Direct editing is
 detected before activation or reading.
 
+The experimental Adaptive ledger is a separate SQLite database. `home init` does not create it;
+the owner must run `adaptive init`. Its records are mutable lifecycle state rather than Pack
+content, and its CLI does not alter Pack activation or identity. Adaptive schema v5 contains the
+request-bound operation journal plus content-free review proposals and append-only human decision
+receipts. Separate hashed local capabilities authorize proposing and approving; enrollment remains
+under the local OS-owner trust boundary. A decision never applies its suggested action, and this
+does not add an Agent writer or scheduler.
+
 ## Agent surface
 
 The MCP server is local stdio and content-read-only. `find_memory` returns ranked
@@ -59,6 +80,26 @@ they never edit Workspace or Pack JSON.
 
 ## Non-goals
 
-The core is not a website, hosted RAG service, public knowledge network,
-conversation-memory system, document parser, or LLM runtime. Search is a
-replaceable local projection; the portable JSON Pack is the delivered product.
+The shipped core is not a website, hosted RAG service, public knowledge network, automatic
+conversation-capture system, general document parser, or LLM runtime. Artifact search is a replaceable
+local projection; the portable JSON Pack remains the source-derived deliverable.
+
+## Target memory architecture
+
+The product roadmap does not replace the Pack pipeline. Phase 1 now implements a separate,
+opt-in Adaptive Memory CLI for explicitly submitted preferences and episodes. Unified Recall is
+still only a target. Affective memory is deferred and would require a separate safety gate:
+
+```text
+Source material -> Workspace -> immutable Pack ----+
+                                                    +-> Unified Recall -> Agent
+Authorized interactions -> mutable local ledger ---+
+```
+
+Artifact and Adaptive memory have different provenance and lifecycle rules. Working memory and
+hidden model reasoning remain the responsibility of the Agent runtime and are not persisted by
+default. Dynamic writes must not be silently added to the existing read-only MCP surface.
+
+The full design, Mem0 comparison, graph boundary, staged implementation plan, and stop criteria
+are in [`memory-strategy.md`](memory-strategy.md). Agent writer, automatic capture, affective
+memory, adapters, and Unified Recall are not part of the current contract.

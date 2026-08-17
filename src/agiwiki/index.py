@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import sqlite3
@@ -32,8 +33,11 @@ _ENGLISH_STOPWORDS = {
     "is",
     "of",
     "please",
+    "safe",
+    "safely",
     "the",
     "to",
+    "verify",
     "what",
     "when",
     "where",
@@ -41,6 +45,16 @@ _ENGLISH_STOPWORDS = {
     "with",
 }
 _CJK_STOPWORDS = {
+    "并",
+    "了",
+    "为",
+    "于",
+    "及",
+    "在",
+    "把",
+    "或",
+    "的",
+    "与",
     "一下",
     "什么",
     "可以",
@@ -418,6 +432,8 @@ def _fallback_search(
     score_parameters: list[str] = []
     where_parts: list[str] = []
     where_parameters: list[str] = []
+    match_parts: list[str] = []
+    match_parameters: list[str] = []
     for term in terms:
         escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
@@ -429,17 +445,27 @@ def _fallback_search(
         score_parameters.extend((pattern, pattern, pattern))
         where_parts.append("search_text LIKE ? ESCAPE '\\'")
         where_parameters.append(pattern)
+        match_parts.append("CASE WHEN search_text LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END")
+        match_parameters.append(pattern)
+    minimum_matches = 1 if len(terms) == 1 else math.ceil(len(terms) * 0.6)
     statement = f"""
         SELECT entry_version_id,entry_id,title,summary,kind,
                ({" + ".join(score_parts)}) AS relevance
         FROM entry_fts
-        WHERE {" OR ".join(where_parts)}
+        WHERE ({" OR ".join(where_parts)})
+          AND ({" + ".join(match_parts)}) >= ?
         ORDER BY relevance DESC,entry_id
         LIMIT ?
     """
     return connection.execute(
         statement,
-        (*score_parameters, *where_parameters, limit),
+        (
+            *score_parameters,
+            *where_parameters,
+            *match_parameters,
+            minimum_matches,
+            limit,
+        ),
     ).fetchall()
 
 
@@ -448,20 +474,29 @@ def _fallback_terms(query: str) -> tuple[str, ...]:
     for match in _QUERY_PART.finditer(query):
         value = match.group(0)
         if "\u3400" <= value[0] <= "\u9fff":
-            if value not in _CJK_STOPWORDS:
-                terms.append(value)
-            if len(value) > 3:
-                terms.extend(
-                    part
-                    for index in range(len(value) - 1)
-                    if (part := value[index : index + 2]) not in _CJK_STOPWORDS
-                )
+            terms.extend(_cjk_fallback_terms(value))
         elif len(value) >= 2:
             folded = value.casefold()
             if folded not in _ENGLISH_STOPWORDS:
                 terms.append(folded)
     unique = tuple(dict.fromkeys(terms))[:32]
     return unique
+
+
+def _cjk_fallback_terms(value: str) -> tuple[str, ...]:
+    cleaned = value
+    for stopword in sorted(_CJK_STOPWORDS, key=len, reverse=True):
+        cleaned = cleaned.replace(stopword, " ")
+    terms: list[str] = []
+    for segment in cleaned.split():
+        if len(segment) < 2:
+            continue
+        terms.append(segment)
+        if len(segment) > 3:
+            terms.extend(
+                segment[index : index + 2] for index in range(len(segment) - 1)
+            )
+    return tuple(terms)
 
 
 def _safe_index_target(path: str | os.PathLike[str]) -> Path:

@@ -182,11 +182,11 @@ def test_example_pack_v2_has_a_golden_portable_identity(tmp_path: Path) -> None:
     receipt = build_workspace_pack(workspace_value, tmp_path / "example.memory-pack")
 
     assert workspace_value.workspace_digest == (
-        "sha256:b50f1df15e1d5a322fb76ce09906cfe527fa1c27c41a6037f244a39f1a0da5e6"
+        "sha256:a222775b6cb859abb67493b6e9a9df8a7b44ae1165f4983094d52b9c50bf8dfd"
     )
-    assert receipt["pack_id"] == "pack_d773debce47e8ec089cf146aca1ef0b1"
+    assert receipt["pack_id"] == "pack_1bb325563cab820648b46a45c4408d07"
     assert receipt["manifest_digest"] == (
-        "sha256:ed790c4b16fd4b860677895c7330add1643a3e84712b099f07c20d9d4796579a"
+        "sha256:57122b348d0f4527505dbd46edd0bd424c0b6f4fabae13442c1f5948704453ff"
     )
 
 

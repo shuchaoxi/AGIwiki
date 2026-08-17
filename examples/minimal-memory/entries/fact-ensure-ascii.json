@@ -2,13 +2,13 @@
   "contract_version": "agiwiki.entry.v1",
   "entry_id": "entry_33333333333333333333333333333333",
   "kind": "fact",
-  "title": "ensure_ascii 控制非 ASCII 字符转义",
-  "summary": "json.dumps 的 ensure_ascii 为 false 时，非 ASCII 字符可以直接出现在输出中。",
+  "title": "ensure_ascii controls non-ASCII escaping",
+  "summary": "When json.dumps uses ensure_ascii=false, non-ASCII characters can appear directly in its output.",
   "content": {
-    "statement": "调用 json.dumps 时将 ensure_ascii 设置为 false，可让中文等非 ASCII 字符以原字符形式输出。",
+    "statement": "Setting ensure_ascii to false in json.dumps allows non-ASCII characters to remain unescaped in the returned text.",
     "qualifiers": [
       {
-        "name": "适用版本",
+        "name": "applicable version",
         "value": "Python 3.12"
       }
     ]
@@ -26,7 +26,7 @@
       "source_id": "src_22222222222222222222222222222222",
       "locator": {
         "type": "section",
-        "value": "Python json 模块事实"
+        "value": "Python json module facts"
       },
       "support_level": "direct"
     }

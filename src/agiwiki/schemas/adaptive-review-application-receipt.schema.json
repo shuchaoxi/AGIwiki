@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-review-application-receipt.schema.json",
+  "title": "AGIWiki Adaptive Memory Review Application Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "application_id",
+    "decision_id",
+    "proposal_id",
+    "proposal_digest",
+    "applied_by_principal_id",
+    "applied_at",
+    "results",
+    "contains_memory_content",
+    "mutations_applied",
+    "replayed"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-review-application-receipt.v1"},
+    "application_id": {"type": "string", "pattern": "^application_[0-9a-f]{32}$"},
+    "decision_id": {"type": "string", "pattern": "^decision_[0-9a-f]{32}$"},
+    "proposal_id": {"type": "string", "pattern": "^review_[0-9a-f]{32}$"},
+    "proposal_digest": {"$ref": "#/$defs/digest"},
+    "applied_by_principal_id": {
+      "type": "string",
+      "pattern": "^principal_[0-9a-f]{32}$"
+    },
+    "applied_at": {"type": "string", "format": "date-time"},
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": {"$ref": "#/$defs/result"}
+    },
+    "contains_memory_content": {"const": false},
+    "mutations_applied": {"const": true},
+    "replayed": {"type": "boolean"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "memory_id": {"type": "string", "pattern": "^mem_[0-9a-f]{32}$"},
+    "lineage_id": {"type": "string", "pattern": "^lineage_[0-9a-f]{32}$"},
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "action",
+        "kept_memory_id",
+        "forgotten_memory_ids",
+        "forgotten_lineage_ids",
+        "forgotten_revision_count"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "pattern": "^candidate_[0-9a-f]{32}$"},
+        "action": {"enum": ["forget", "keep_one", "forget_redundant"]},
+        "kept_memory_id": {"oneOf": [{"$ref": "#/$defs/memory_id"}, {"type": "null"}]},
+        "forgotten_memory_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/memory_id"}
+        },
+        "forgotten_lineage_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/lineage_id"}
+        },
+        "forgotten_revision_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

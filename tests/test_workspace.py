@@ -89,7 +89,7 @@ def test_minimal_workspace_loads_and_locates_editable_entry() -> None:
     assert workspace.workspace_id == "ws_11111111111111111111111111111111"
     assert len(workspace.sources) == 1
     assert len(workspace.entries) == 4
-    assert workspace.source(SOURCE_ID)["title"] == "AGIWiki JSON 示例证据笔记"
+    assert workspace.source(SOURCE_ID)["title"] == "AGIWiki JSON example evidence notes"
     assert workspace.entry(FACT_ID)["kind"] == "fact"
     assert workspace.locate_entry(FACT_ID).name == "fact-ensure-ascii.json"
     assert workspace.workspace_digest.startswith("sha256:")

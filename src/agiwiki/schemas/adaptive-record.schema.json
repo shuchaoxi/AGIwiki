@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-record.schema.json",
+  "title": "AGIWiki Adaptive Memory Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "memory_id",
+    "lineage_id",
+    "revision",
+    "memory_class",
+    "scope",
+    "content",
+    "content_digest",
+    "provenance",
+    "observed_at",
+    "valid_from",
+    "valid_to",
+    "confidence",
+    "sensitivity",
+    "retention",
+    "status",
+    "supersedes_memory_id",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-memory.v1"},
+    "memory_id": {"type": "string", "pattern": "^mem_[0-9a-f]{32}$"},
+    "lineage_id": {"type": "string", "pattern": "^lineage_[0-9a-f]{32}$"},
+    "revision": {"type": "integer", "minimum": 1},
+    "memory_class": {"enum": ["profile", "episode"]},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "key"],
+      "properties": {
+        "type": {"enum": ["user", "agent", "run", "workspace"]},
+        "key": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "content": {"type": ["string", "null"], "minLength": 1, "maxLength": 16384},
+    "content_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "provenance": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "digest"],
+          "properties": {
+            "type": {
+              "enum": [
+                "explicit_user",
+                "authorized_interaction",
+                "task_result",
+                "import"
+              ]
+            },
+            "digest": {
+              "type": ["string", "null"],
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {"type": {"const": "explicit_user"}}
+              },
+              "else": {"properties": {"digest": {"type": "string"}}}
+            }
+          ]
+        }
+      ]
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"type": "string", "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "sensitivity": {"enum": ["private", "sensitive"]},
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "expires_at"],
+      "properties": {
+        "mode": {"enum": ["durable", "expiring"]},
+        "expires_at": {"type": ["string", "null"], "format": "date-time"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "durable"}}},
+          "then": {"properties": {"expires_at": {"const": null}}},
+          "else": {"properties": {"expires_at": {"type": "string"}}}
+        }
+      ]
+    },
+    "status": {"enum": ["active", "superseded", "deleted"]},
+    "supersedes_memory_id": {
+      "type": ["string", "null"],
+      "pattern": "^mem_[0-9a-f]{32}$"
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "deleted"}}},
+      "then": {
+        "properties": {
+          "content": {"const": null},
+          "content_digest": {"const": null},
+          "provenance": {"const": null}
+        }
+      },
+      "else": {
+        "properties": {
+          "content": {"type": "string"},
+          "content_digest": {"type": "string"},
+          "provenance": {"type": "object"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"revision": {"const": 1}}},
+      "then": {"properties": {"supersedes_memory_id": {"const": null}}},
+      "else": {"properties": {"supersedes_memory_id": {"type": "string"}}}
+    }
+  ]
+}

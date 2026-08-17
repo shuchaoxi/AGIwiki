@@ -1,0 +1,110 @@
+{
+  "contract_version": "agiwiki.retrieval-eval-task-bank.v1",
+  "task_bank_id": "rfc9112-reviewed-v1",
+  "pack_id": "pack_ab574d1f20f1b58fa256a76b6abed25c",
+  "source_digest": "sha256:b260bba790c2da55a7e0795f356fcd9b70743686c55250f0ef1cc993c4d1abac",
+  "cases": [
+    {
+      "case_id": "in-01-octet-parsing",
+      "query": "Why must an HTTP/1.1 parser parse messages as octets instead of Unicode?",
+      "expected_found": true,
+      "expected_entry_id": "entry_71afab54d8732c48333cd08d9da5d75c"
+    },
+    {
+      "case_id": "in-02-request-target",
+      "query": "What are the four forms of an HTTP/1.1 request target?",
+      "expected_found": true,
+      "expected_entry_id": "entry_d29970310598d942943addf62993b156"
+    },
+    {
+      "case_id": "in-03-framing-conflict",
+      "query": "What should a recipient do when Transfer-Encoding and Content-Length both appear?",
+      "expected_found": true,
+      "expected_entry_id": "entry_9121ce96c764480e21034c416ae6d612"
+    },
+    {
+      "case_id": "in-04-body-length",
+      "query": "In what precedence order is the HTTP/1.1 message body length determined?",
+      "expected_found": true,
+      "expected_entry_id": "entry_e676bd0e074b2832356861193e1b0aae"
+    },
+    {
+      "case_id": "in-05-incomplete-message",
+      "query": "How can I detect a truncated incomplete chunked or Content-Length response?",
+      "expected_found": true,
+      "expected_entry_id": "entry_d568298962bca5b364eaa20354be9120"
+    },
+    {
+      "case_id": "in-06-persistent-reuse",
+      "query": "When is an HTTP/1.1 persistent connection safe to reuse?",
+      "expected_found": true,
+      "expected_entry_id": "entry_633dc1d27b7931a97e1934f1558465a9"
+    },
+    {
+      "case_id": "in-07-graceful-close",
+      "query": "How do I close an HTTP/1.1 connection without losing the final response?",
+      "expected_found": true,
+      "expected_entry_id": "entry_1f08bedab6ba8440599e045d84d0b549"
+    },
+    {
+      "case_id": "in-08-field-whitespace",
+      "query": "How should whitespace before a header colon and obs-fold be handled?",
+      "expected_found": true,
+      "expected_entry_id": "entry_a8000aa192e13e2ac367242d47eaf8ab"
+    },
+    {
+      "case_id": "in-09-message-structure",
+      "query": "What components make up an HTTP/1.1 message?",
+      "expected_found": true,
+      "expected_entry_id": "entry_e9ee0d00a1c4d0e1bfcd920d6892da06"
+    },
+    {
+      "case_id": "in-10-desynchronization",
+      "query": "How do response splitting and request smuggling exploit parser differences?",
+      "expected_found": true,
+      "expected_entry_id": "entry_1ee8e3e46f47abb45da1f278a91d77db"
+    },
+    {
+      "case_id": "in-11-rfc7230-changes",
+      "query": "What changed from RFC 7230 in RFC 9112 messaging rules?",
+      "expected_found": true,
+      "expected_entry_id": "entry_f8b34fd97e114f2fe5e51ac490ec75cc"
+    },
+    {
+      "case_id": "in-12-security-boundary",
+      "query": "Does HTTP/1.1 provide message integrity or confidentiality?",
+      "expected_found": true,
+      "expected_entry_id": "entry_6980f214b36d9852ec2be446bf810663"
+    },
+    {
+      "case_id": "out-01-hpack",
+      "query": "How does the HTTP/2 HPACK dynamic table work?",
+      "expected_found": false,
+      "expected_entry_id": null
+    },
+    {
+      "case_id": "out-02-samesite",
+      "query": "How should SameSite cookies be configured?",
+      "expected_found": false,
+      "expected_entry_id": null
+    },
+    {
+      "case_id": "out-03-cors",
+      "query": "When does a browser send a CORS preflight request?",
+      "expected_found": false,
+      "expected_entry_id": null
+    },
+    {
+      "case_id": "out-04-websocket",
+      "query": "How are WebSocket client frames masked?",
+      "expected_found": false,
+      "expected_entry_id": null
+    },
+    {
+      "case_id": "out-05-cache",
+      "query": "How is HTTP cache freshness lifetime calculated?",
+      "expected_found": false,
+      "expected_entry_id": null
+    }
+  ]
+}

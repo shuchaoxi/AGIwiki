@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-correction.schema.json",
+  "title": "AGIWiki Adaptive Memory Correction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "content", "provenance"],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-correction.v1"},
+    "content": {"type": "string", "minLength": 1, "maxLength": 16384},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "explicit_user",
+            "authorized_interaction",
+            "task_result",
+            "import"
+          ]
+        },
+        "digest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "sensitivity": {"enum": ["private", "sensitive"]},
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "expires_at"],
+      "properties": {
+        "mode": {"enum": ["durable", "expiring"]},
+        "expires_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}

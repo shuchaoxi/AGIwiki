@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/author-claim.v1.json",
+  "title": "AGIWiki authoring batch claim",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "claim_id", "plan_id", "batch_id", "claim_digest"],
+  "properties": {
+    "contract_version": {"const": "agiwiki.author-claim.v1"},
+    "claim_id": {"type": "string", "pattern": "^authorclaim_[a-f0-9]{32}$"},
+    "plan_id": {"type": "string", "pattern": "^authorplan_[a-f0-9]{32}$"},
+    "batch_id": {"type": "string", "pattern": "^authorbatch_[a-f0-9]{32}$"},
+    "claim_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

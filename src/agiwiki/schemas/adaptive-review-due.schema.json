@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.dev/schemas/adaptive-review-due.schema.json",
+  "title": "AGIWiki Adaptive Memory Review Due Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "scope",
+    "interval",
+    "checked_at",
+    "state",
+    "due",
+    "last_proposal_id",
+    "last_proposal_at",
+    "last_decision_id",
+    "last_decision_at",
+    "last_application_id",
+    "last_application_at",
+    "next_due_at",
+    "counts",
+    "recommended_actions",
+    "contains_memory_content",
+    "mutations_applied",
+    "model_invoked"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.adaptive-review-due.v1"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "interval": {"enum": ["daily", "weekly"]},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "state": {"enum": ["never_reviewed", "pending_decision", "reviewed"]},
+    "due": {"type": "boolean"},
+    "last_proposal_id": {
+      "type": ["string", "null"],
+      "pattern": "^review_[0-9a-f]{32}$"
+    },
+    "last_proposal_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_decision_id": {
+      "type": ["string", "null"],
+      "pattern": "^decision_[0-9a-f]{32}$"
+    },
+    "last_decision_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_application_id": {
+      "type": ["string", "null"],
+      "pattern": "^application_[0-9a-f]{32}$"
+    },
+    "last_application_at": {"type": ["string", "null"], "format": "date-time"},
+    "next_due_at": {"type": ["string", "null"], "format": "date-time"},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidates",
+        "accepted_actions",
+        "applied_actions",
+        "unapplied_supported_actions",
+        "declared_corrections"
+      ],
+      "properties": {
+        "candidates": {"type": "integer", "minimum": 0, "maximum": 500},
+        "accepted_actions": {"type": "integer", "minimum": 0, "maximum": 500},
+        "applied_actions": {"type": "integer", "minimum": 0, "maximum": 500},
+        "unapplied_supported_actions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        },
+        "declared_corrections": {"type": "integer", "minimum": 0, "maximum": 500}
+      }
+    },
+    "recommended_actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "create_proposal",
+          "decide_existing",
+          "apply_supported_actions",
+          "correct_manually",
+          "wait"
+        ]
+      }
+    },
+    "contains_memory_content": {"const": false},
+    "mutations_applied": {"const": false},
+    "model_invoked": {"const": false}
+  },
+  "$defs": {
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "key"],
+      "properties": {
+        "type": {"enum": ["user", "agent", "run", "workspace"]},
+        "key": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    }
+  }
+}

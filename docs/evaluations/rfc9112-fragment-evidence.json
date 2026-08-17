@@ -1,0 +1,25 @@
+{
+  "contract_version": "agiwiki.fragment-evidence.v1",
+  "task_bank_id": "rfc9112-reviewed-v1",
+  "source_text_digest": "sha256:0fbaa0bc7e01440eb73966543cce25e72959fbfae4f100b8dfab239bea93ce15",
+  "page_count": 46,
+  "cases": [
+    {"case_id": "in-01-octet-parsing", "evidence_pages": [[7, 8]]},
+    {"case_id": "in-02-request-target", "evidence_pages": [[9, 12]]},
+    {"case_id": "in-03-framing-conflict", "evidence_pages": [[17, 19]]},
+    {"case_id": "in-04-body-length", "evidence_pages": [[19, 20]]},
+    {"case_id": "in-05-incomplete-message", "evidence_pages": [[25, 25]]},
+    {"case_id": "in-06-persistent-reuse", "evidence_pages": [[26, 27]]},
+    {"case_id": "in-07-graceful-close", "evidence_pages": [[29, 30]]},
+    {"case_id": "in-08-field-whitespace", "evidence_pages": [[15, 16]]},
+    {"case_id": "in-09-message-structure", "evidence_pages": [[6, 6]]},
+    {"case_id": "in-10-desynchronization", "evidence_pages": [[33, 34]]},
+    {"case_id": "in-11-rfc7230-changes", "evidence_pages": [[43, 43]]},
+    {"case_id": "in-12-security-boundary", "evidence_pages": [[34, 35]]},
+    {"case_id": "out-01-hpack", "evidence_pages": []},
+    {"case_id": "out-02-samesite", "evidence_pages": []},
+    {"case_id": "out-03-cors", "evidence_pages": []},
+    {"case_id": "out-04-websocket", "evidence_pages": []},
+    {"case_id": "out-05-cache", "evidence_pages": []}
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agiwiki.net/schemas/author-budget-extension.v1.json",
+  "title": "AGIWiki authoring budget extension",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "extension_id",
+    "plan_id",
+    "operation_id",
+    "added_tokens",
+    "extension_digest"
+  ],
+  "properties": {
+    "contract_version": {"const": "agiwiki.author-budget-extension.v1"},
+    "extension_id": {"type": "string", "pattern": "^authorext_[a-f0-9]{32}$"},
+    "plan_id": {"type": "string", "pattern": "^authorplan_[a-f0-9]{32}$"},
+    "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$"},
+    "added_tokens": {"type": "integer", "minimum": 256, "maximum": 1000000000},
+    "extension_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

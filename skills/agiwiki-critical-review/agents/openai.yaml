@@ -1,0 +1,4 @@
+interface:
+  display_name: "AGIWiki Critical Review"
+  short_description: "Challenge technical ideas with evidence and tests"
+  default_prompt: "Use $agiwiki-critical-review to stress-test this technical proposal and identify the cheapest falsification test."
