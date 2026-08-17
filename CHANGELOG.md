@@ -7,6 +7,9 @@ public releases; pre-1.0 contracts may still change with an explicit migration n
 
 The project is in maintenance mode. Only critical fixes and documentation corrections are planned.
 
+- Pin the development lint tool to the version used to verify the final Alpha, so maintenance CI
+  does not change merely because new lint rules are released.
+
 ## 0.1.0a1 - 2026-08-17
 
 Tag: `v0.1.0-alpha.1`
